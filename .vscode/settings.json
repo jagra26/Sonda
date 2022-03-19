@@ -12,5 +12,6 @@
     "idf.pythonBinPathWin": "C:\\Users\\joaoa\\.espressif\\python_env\\idf4.4_py3.8_env\\Scripts\\python.exe",
     "idf.toolsPathWin": "C:\\Users\\joaoa\\.espressif",
     "idf.flashType": "UART",
-    "esbonio.server.enabled": true
+    "esbonio.server.enabled": true,
+    "restructuredtext.syntaxHighlighting.disabled": true
 }
