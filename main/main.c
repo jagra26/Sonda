@@ -181,7 +181,8 @@ void task_sd(void *p) {
   // First create a file.
   const char *data_file = MOUNT_POINT "/data.csv";
   ESP_LOGI(SDTAG, "Opening file %s", data_file);
-  FILE *f = fopen(data_file, "w");
+  FILE *f;
+  f = fopen(data_file, "w");
   if (f == NULL) {
     ESP_LOGE(SDTAG, "Failed to open file for writing");
     return;
@@ -192,19 +193,19 @@ void task_sd(void *p) {
   ESP_LOGI(SDTAG, "close file: %s", data_file);
   char temp_msg[10];
   char lora_msg[128] = "";
+  time_t tt = time(NULL); // Obtem o tempo atual em segundos. Utilize isso
+                          // sempre que precisar obter o tempo atual
+  char data_formatada[64];
   while (true) {
     if (xQueueReceive(temp_queue, (void *)&temp_msg, 10) == pdTRUE) {
       ESP_LOGI(SDTAG, "Opening file %s", data_file);
-      FILE *f = fopen(data_file, "a");
+      f = fopen(data_file, "a");
       if (f == NULL) {
         ESP_LOGE(SDTAG, "Failed to open file for writing");
         return;
       }
-      time_t tt = time(NULL); // Obtem o tempo atual em segundos. Utilize isso
-                              // sempre que precisar obter o tempo atual
-      data = *gmtime(&tt);    // Converte o tempo atual e atribui na estrutura
+      data = *localtime(&tt); // Converte o tempo atual e atribui na estrutura
 
-      char data_formatada[64];
       strftime(data_formatada, 64, "%d/%m/%Y, %H:%M:%S",
                &data); // Cria uma String formatada da estrutura "data"
       ESP_LOGI(SDTAG, "get datetime: %s", data_formatada);
@@ -226,6 +227,8 @@ void task_sd(void *p) {
 
 void app_main() {
   // rtc
+  setenv("TZ", "EST3EDT", 1);
+  tzset();
   struct timeval tv;      // Cria a estrutura temporaria para funcao abaixo.
   tv.tv_sec = 1647825026; // Atribui minha data atual. Voce pode usar o NTP
                           // para
