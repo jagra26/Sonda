@@ -6,11 +6,16 @@
 #include "freertos/task.h"
 #include "lora.h"
 #include "sdmmc_cmd.h"
+#include <esp_system.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/unistd.h>
+#include <time.h>
+
+struct tm data; // Cria a estrutura que contem as informacoes da data.
 
 static const char *LORATAG = "LORA";
 
@@ -135,9 +140,10 @@ float multi_sampling_adc2(adc_channel_t channel, adc_bits_width_t width,
  * @param p
  */
 void task_tx(void *p) {
-  char payload[10];
+  char payload[128];
   while (true) {
     if (xQueueReceive(tx_queue, (void *)&payload, 10) == pdTRUE) {
+      ESP_LOGI(LORATAG, "Lenght of payload: %d", strlen(payload));
       lora_send_packet((uint8_t *)payload, strlen(payload));
       ESP_LOGI(LORATAG, "Packet send: %s", payload);
       vTaskDelay(pdMS_TO_TICKS(1000));
@@ -155,7 +161,7 @@ void task_temp_read(void *p) {
     float adc_reading = multi_sampling_adc2(channel, width, 10);
     float temp = calculate_temp(adc_reading);
     char temp_msg[10];
-    sprintf(temp_msg, "%f", temp);
+    sprintf(temp_msg, "%.2f", temp);
     xQueueSend(temp_queue, (void *)&temp_msg, 10);
     ESP_LOGI(THERMTAG, "write on temp_queue");
     vTaskDelay(pdMS_TO_TICKS(1000));
@@ -173,16 +179,19 @@ void task_sd(void *p) {
   // Use POSIX and C standard library functions to work with files.
 
   // First create a file.
-  const char *data_file = MOUNT_POINT "/data.txt";
+  const char *data_file = MOUNT_POINT "/data.csv";
   ESP_LOGI(SDTAG, "Opening file %s", data_file);
   FILE *f = fopen(data_file, "w");
   if (f == NULL) {
     ESP_LOGE(SDTAG, "Failed to open file for writing");
     return;
   }
-  fprintf(f, "temp ºC\n");
+  ESP_LOGI(SDTAG, "write header");
+  fprintf(f, "Data, Hora, Temperatura (ºC)\n");
   fclose(f);
+  ESP_LOGI(SDTAG, "close file: %s", data_file);
   char temp_msg[10];
+  char lora_msg[128] = "";
   while (true) {
     if (xQueueReceive(temp_queue, (void *)&temp_msg, 10) == pdTRUE) {
       ESP_LOGI(SDTAG, "Opening file %s", data_file);
@@ -191,17 +200,38 @@ void task_sd(void *p) {
         ESP_LOGE(SDTAG, "Failed to open file for writing");
         return;
       }
-      fprintf(f, "temp: %sºC\n", temp_msg);
+      time_t tt = time(NULL); // Obtem o tempo atual em segundos. Utilize isso
+                              // sempre que precisar obter o tempo atual
+      data = *gmtime(&tt);    // Converte o tempo atual e atribui na estrutura
+
+      char data_formatada[64];
+      strftime(data_formatada, 64, "%d/%m/%Y, %H:%M:%S",
+               &data); // Cria uma String formatada da estrutura "data"
+      ESP_LOGI(SDTAG, "get datetime: %s", data_formatada);
+      fprintf(f, "%s, %s\n", data_formatada, temp_msg);
+      ESP_LOGI(SDTAG, "write data on file");
       fclose(f);
-      ESP_LOGI(SDTAG, "write on file");
-      xQueueSend(tx_queue, (void *)&temp_msg, 10);
+      ESP_LOGI(SDTAG, "close file: %s", data_file);
+      strcat(lora_msg, data_formatada);
+      strcat(lora_msg, ", ");
+      strcat(lora_msg, temp_msg);
+      xQueueSend(tx_queue, (void *)&lora_msg, 10);
       ESP_LOGI(SDTAG, "write on tx_queue");
+      strcpy(lora_msg, "");
+      ESP_LOGI(SDTAG, "reset lora_msg");
       vTaskDelay(pdMS_TO_TICKS(1000));
     }
   }
 }
 
 void app_main() {
+  // rtc
+  struct timeval tv;      // Cria a estrutura temporaria para funcao abaixo.
+  tv.tv_sec = 1647825026; // Atribui minha data atual. Voce pode usar o NTP
+                          // para
+                          // isso ou o site citado no artigo!
+  settimeofday(
+      &tv, NULL); // Configura o RTC para manter a data atribuida atualizada.
   if (SD) {
     // sd card
     esp_err_t ret;
@@ -276,7 +306,7 @@ void app_main() {
   temp_queue = xQueueCreate(10, sizeof(char[10]));
   while (temp_queue == NULL)
     ;
-  tx_queue = xQueueCreate(10, sizeof(char[10]));
+  tx_queue = xQueueCreate(10, sizeof(char[128]));
   while (tx_queue == NULL)
     ;
   // adc thermistor
