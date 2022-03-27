@@ -56,6 +56,15 @@ static const char *SDTAG = "SD CARD";
 #define PIN_NUM_CS 13
 
 // Task handles
+#define STACK_SIZE_SD 4096
+StaticTask_t x_task_buffer_sd;
+StackType_t x_stack_sd[STACK_SIZE_SD];
+#define STACK_SIZE_TX 2048
+StaticTask_t x_task_buffer_tx;
+StackType_t x_stack_tx[STACK_SIZE_TX];
+#define STACK_SIZE_TEMP 2048
+StaticTask_t x_task_buffer_temp;
+StackType_t x_stack_temp[STACK_SIZE_TEMP];
 static TaskHandle_t temp_task = NULL;
 static TaskHandle_t tx_task = NULL;
 static TaskHandle_t sd_task = NULL;
@@ -324,7 +333,11 @@ void app_main() {
   lora_set_frequency(866e6);
   lora_enable_crc();
   // tasks
-  xTaskCreate(&task_sd, "task_sd", 2048, NULL, 10, sd_task);
-  xTaskCreate(&task_tx, "task_tx", 2048, NULL, 5, tx_task);
-  xTaskCreate(&task_temp_read, "task_temp_read", 2048, NULL, 5, temp_task);
+  sd_task = xTaskCreateStatic(&task_sd, "task_sd", STACK_SIZE_SD, NULL, 10,
+                              x_stack_sd, &x_task_buffer_sd);
+  tx_task = xTaskCreateStatic(&task_tx, "task_tx", STACK_SIZE_TX, NULL, 5,
+                              x_stack_tx, &x_task_buffer_tx);
+  temp_task =
+      xTaskCreateStatic(&task_temp_read, "task_temp_read", STACK_SIZE_TEMP,
+                        NULL, 5, x_stack_temp, &x_task_buffer_temp);
 }
