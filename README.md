@@ -12,6 +12,15 @@ da qualidade da água. Já [Xu et al., 2011](https://www.sciencedirect.com/scien
 água em longa duração, isto é, a medição periódica por vários anos. 
 
 Nesse contexto, uma sonda multiparametros de operação remota é uma solução aplicável. Não necessita de coletas, consegue gerar um grande volume de dados por um longo tempo e tem apenas um custo inicial.
+
+
+## Metodologia
+
+O projeto tem como base a placa [TTGO-T-Beam](https://github.com/LilyGO/TTGO-T-Beam), um kit de desenvolvimento [ESP32](https://docs.espressif.com/projects/esp-
+idf/en/latest/esp32/get-started/index.html) que já conta com GPS e LoRa. Sensores de temperatura, pH, TDS e turbidez fazem a aquisição dos dados. O armazenamento 
+se dá através de um módulo de cartão SD. 
+A transmissão dos dados se dá através de LoRa. O controle desses módulos é feito através do [FreeRTOS](https://www.freertos.org)
+
 ## How to use example
 We encourage the users to use the example as a template for the new projects.
 A recommended way is to follow the instructions on a [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project).
