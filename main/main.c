@@ -6,6 +6,7 @@
 #include "freertos/task.h"
 #include "lora.h"
 #include "sdmmc_cmd.h"
+#include "thermistor.h"
 #include <esp_system.h>
 #include <math.h>
 #include <stdio.h>
@@ -22,7 +23,7 @@ static const char *LORATAG = "LORA";
 // thermistor
 static const char *THERMTAG = "THERMISTOR";
 static const adc_channel_t channel =
-    ADC_CHANNEL_8; // 10 channels: GPIO0, GPIO2, GPIO4, GPIO12 - GPIO15, GOIO25
+    ADC_CHANNEL_8; // 10 channels: GPIO0, GPIO2, GPIO4, GPIO12 - GPIO15, GPIO25
                    // - GPIO27
 static const adc_bits_width_t width = ADC_WIDTH_BIT_12; // 12 bits de leitura
 static const adc_atten_t atten = ADC_ATTEN_DB_11;       // 150 mV ~ 2450 mV
@@ -31,15 +32,6 @@ static const adc_unit_t unit = ADC_UNIT_2;
 #define DEFAULT_VREF 1100 // Use adc2_vref_to_gpio() to obtain a better estimate
 #define NO_OF_SAMPLES 8 // Multisampling
 static esp_adc_cal_characteristics_t *adc_chars;
-
-#define TEMPERATURENOMINAL 25
-#define NTC_BETA 3650.0
-#define NTC_NOMINAL_RESISTANCE 10000.0
-#define NTC_SERIES_RESISTANCE 10000.0
-#define NTC_ADC_MAX 4095.0
-#define NTC_VCC 3.3
-#define NTC_CONST_TEMP 298.15
-#define NTC_CONV_TEMP 273.15
 
 // sd card
 static const char *SDTAG = "SD CARD";
@@ -50,7 +42,7 @@ static const char *SDTAG = "SD CARD";
 // Pin assignments can be set in menuconfig, see "SD SPI Example Configuration"
 // menu. You can also change the pin assignments here by changing the following
 // 4 lines.
-#define PIN_NUM_MISO 2
+#define PIN_NUM_MISO 35
 #define PIN_NUM_MOSI 15
 #define PIN_NUM_CLK 14
 #define PIN_NUM_CS 13
@@ -96,27 +88,6 @@ static void check_efuse(void) {
   } else {
     printf("eFuse Vref: NOT supported\n");
   }
-}
-
-/**
- * @brief function to calculate temperature using the steinhart method
- * @todo create a library to thermistor
- *
- * @param adc_reading input value of adc
- * @return float
- */
-float calculate_temp(uint32_t adc_reading) {
-  float average;
-  average = NTC_ADC_MAX / adc_reading - 1;
-  average = NTC_SERIES_RESISTANCE * average;
-  float steinhart;
-  steinhart = average / NTC_NOMINAL_RESISTANCE;
-  steinhart = log(steinhart);
-  steinhart /= NTC_BETA;                                   // 1/B * ln(R/Ro)
-  steinhart += 1.0 / (TEMPERATURENOMINAL + NTC_CONV_TEMP); // + (1/To)
-  steinhart = 1.0 / steinhart;                             // Invert
-  steinhart -= NTC_CONV_TEMP;                              // convert to C
-  return steinhart;
 }
 
 /**
