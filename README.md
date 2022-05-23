@@ -39,3 +39,15 @@ Como sensor de temperatura, utiliza-se o termistor [MF-58](https://cdn.awsli.com
 resistência interna de 10k ohms. Está conectado a placa principal em conjunto a um divisor de tensão. 
 E a temperatura é computada através da equação de [Steinhart & Hart, 1968](https://www.sciencedirect.com/science/article/abs/pii/0011747168900570?via%3Dihub).
 
+## Protótipo
+
+No momento o projeto é um protótipo capaz de registrar a temperatura em um cartão sd, em um arquivo .csv, e transmitir mensagens via LoRa. Novos sensores, 
+a comunicação GPS será estabelecida e questões de alimentação são pontos a serem adicionados e resolvidos em breve.
+Uma foto do hardware atual do projeto pode ser vista a seguir:
+![prototype](images/prototype.jpg)
+
+O [placa com display](https://heltec.org/project/wifi-lora-32/) se trata do cliente LoRa, e recebe as mensagens enviadas pelo projeto.
+
+## Esquemático
+
+![wire diagram](images\wire_diagram.jpg)

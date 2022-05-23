@@ -28,15 +28,7 @@ static const adc_unit_t unit = ADC_UNIT_2;
 #define NO_OF_SAMPLES 8 // Multisampling
 static esp_adc_cal_characteristics_t *adc_chars;
 
-/*// sd card
-static const char *SDTAG = "SD CARD";
-#define SD true
-#define MOUNT_POINT "/sdcard"
-#define SDSPI_DEFAULT_DMA 1
-*/
-// Pin assignments can be set in menuconfig, see "SD SPI Example Configuration"
-// menu. You can also change the pin assignments here by changing the following
-// 4 lines.
+// SPI pins of sd card
 #define PIN_NUM_MISO 35
 #define PIN_NUM_MOSI 15
 #define PIN_NUM_CLK 14
