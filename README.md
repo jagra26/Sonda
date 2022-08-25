@@ -39,6 +39,19 @@ Como sensor de temperatura, utiliza-se o termistor [MF-58](https://cdn.awsli.com
 resistência interna de 10k ohms. Está conectado a placa principal em conjunto a um divisor de tensão. 
 E a temperatura é computada através da equação de [Steinhart & Hart, 1968](https://www.sciencedirect.com/science/article/abs/pii/0011747168900570?via%3Dihub).
 
+## pH
+
+Sørensen descreveu pela primeira vez o pH como a concentração de íons de hidrogênio. [Atualmente](https://www.degruyter.com/document/doi/10.1351/pac200274112169/html), é entendido pelo cologaritmo da atividade dos íons de hidrogênio. 
+Sendo dado pela relação: $pH = -\log{a_H}$, onde $a_H$ é a atividade dos íons em $\frac{mol}{dm^3}$.
+O pH consegue descrever o quanto uma solução é ácida ou básica. Sua escala, que é logaritimica, vai de 0, extremamente ácida, até 14, extremamente básica. 
+
+É um fator muito relevante em análises de qualidade de água, pois alterações na acidez sugerem que fenômenos importantes estão acontecendo. 
+A [acidificação oceânica](https://books.google.com.br/books?id=eoxpAgAAQBAJ&hl=pt-BR), por exemplo, é um fenômeno potencializado pelas mudanças climáticas
+que prejudica diversos organismos e fotossíntese, e é mensurado através da escala de pH ao longo do tempo. Em reservatórios é uma grandeza que pode sugerir algum 
+processo de [eutrofização](https://sciencing.com/eutrophication-affect-ph-12036599.html), que pode ser resultado de poluição por esgotos ou fertilizantes.
+
+Como sensor de Ph utiza-se, TODO:
+
 ## Protótipo
 
 No momento o projeto é um protótipo capaz de registrar a temperatura em um cartão sd, em um arquivo .csv, e transmitir mensagens via LoRa. Novos sensores, 
