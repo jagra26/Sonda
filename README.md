@@ -41,7 +41,8 @@ E a temperatura é computada através da equação de [Steinhart & Hart, 1968](h
 
 ## pH
 
-Sørensen descreveu pela primeira vez o pH como a concentração de íons de hidrogênio. [Atualmente](https://www.degruyter.com/document/doi/10.1351/pac200274112169/html), é entendido pelo cologaritmo da atividade dos íons de hidrogênio. 
+Sørensen descreveu pela primeira vez o pH como a concentração de íons de hidrogênio. [Atualmente](https://www.degruyter.com/document/doi/10.1351/pac200274112169/html), 
+é entendido pelo cologaritmo da atividade dos íons de hidrogênio. 
 Sendo dado pela relação: $pH = -\log{a_H}$, onde $a_H$ é a atividade dos íons em $\frac{mol}{dm^3}$.
 O pH consegue descrever o quanto uma solução é ácida ou básica. Sua escala, que é logaritimica, vai de 0, extremamente ácida, até 14, extremamente básica. 
 
@@ -50,8 +51,19 @@ A [acidificação oceânica](https://books.google.com.br/books?id=eoxpAgAAQBAJ&h
 que prejudica diversos organismos e fotossíntese, e é mensurado através da escala de pH ao longo do tempo. Em reservatórios é uma grandeza que pode sugerir algum 
 processo de [eutrofização](https://sciencing.com/eutrophication-affect-ph-12036599.html), que pode ser resultado de poluição por esgotos ou fertilizantes.
 
-Como sensor de Ph utiza-se, um [sensor](https://www.usinainfo.com.br/index.php?controller=attachment&id_attachment=553) de baixo custo, com uma casa decimal de 
-precisão. 
+Como sensor de Ph utiza-se, um [sensor](https://www.usinainfo.com.br/index.php?controller=attachment&id_attachment=553) analógico de baixo custo, com uma casa decimal 
+de precisão. 
+
+## Turbidez
+
+A aparência nebulosa da água devido a suspensão de partículas finas é denominada 
+[turbidez](https://onlinelibrary.wiley.com/doi/epdf/10.1111/j.1752-1688.2001.tb03624.x). Quanto maior a quantidade de partículas em suspensão, mais turva
+é a água. Possui uma importância biológica grande, uma água que se torna turva repentinamente pode indicar a presença de poluição, por exemplo. As partículas 
+podem prejudicar as brânquias dos peixes e diminuir a incidência de luz no ambiente sub aquático.
+
+Como sensor, utiliza-se um módulo analógico de baixo custo.
+
+//TODO: Adicionar fotos
 
 ## Protótipo
 
