@@ -50,7 +50,8 @@ A [acidificação oceânica](https://books.google.com.br/books?id=eoxpAgAAQBAJ&h
 que prejudica diversos organismos e fotossíntese, e é mensurado através da escala de pH ao longo do tempo. Em reservatórios é uma grandeza que pode sugerir algum 
 processo de [eutrofização](https://sciencing.com/eutrophication-affect-ph-12036599.html), que pode ser resultado de poluição por esgotos ou fertilizantes.
 
-Como sensor de Ph utiza-se, TODO:
+Como sensor de Ph utiza-se, um [sensor](https://www.usinainfo.com.br/index.php?controller=attachment&id_attachment=553) de baixo custo, com uma casa decimal de 
+precisão. 
 
 ## Protótipo
 
