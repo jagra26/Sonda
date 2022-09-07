@@ -146,4 +146,4 @@ O [placa com display](https://heltec.org/project/wifi-lora-32/) se trata do clie
 
 ## Esquemático
 
-![wire diagram](images\wire_diagram.jpg)
+![wire diagram](images/wire_diagram.jpg)
