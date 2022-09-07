@@ -14,7 +14,7 @@ da qualidade da água. Já [Xu et al., 2011](https://www.sciencedirect.com/scien
 Nesse contexto, uma sonda multiparametros de operação remota é uma solução aplicável. Não necessita de coletas, consegue gerar um grande volume de dados por um longo tempo e tem apenas um custo inicial.
 
 
-## Metodologia
+## Arquitetura
 
 O projeto tem como base a placa [TTGO-T-Beam](https://github.com/LilyGO/TTGO-T-Beam), um kit de desenvolvimento 
 [ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) que já conta com GPS e LoRa. 
@@ -26,7 +26,11 @@ A arquitetura do projeto pode ser vista abaixo:
 
 ![Arquitetura](./images/arquitetura.jpg)
 
-## Temperatura
+## Sensores
+
+A sonda possui sensores de [temperatura](temperatura), [pH](ph), [turbidez](turbidez) e [TDS](tds). Todos eles são de baixo custo e analógicos.
+
+### Temperatura
 
 Segundo a [Enciclopédia Britannica](https://www.britannica.com/science/temperature), temperatura é uma medida de calor ou frio, 
 que é expressa dentro uma escala arbitrária, e indica a direção do fluxo espontâneo de energia térmica. Isto é, de um corpo mais quente 
@@ -39,7 +43,7 @@ Como sensor de temperatura, utiliza-se o termistor [MF-58](https://cdn.awsli.com
 resistência interna de 10k ohms. Está conectado a placa principal em conjunto a um divisor de tensão. 
 E a temperatura é computada através da equação de [Steinhart & Hart, 1968](https://www.sciencedirect.com/science/article/abs/pii/0011747168900570?via%3Dihub).
 
-## pH
+### pH
 
 Sørensen descreveu pela primeira vez o pH como a concentração de íons de hidrogênio. [Atualmente](https://www.degruyter.com/document/doi/10.1351/pac200274112169/html), 
 é entendido pelo cologaritmo da atividade dos íons de hidrogênio. 
@@ -54,14 +58,16 @@ processo de [eutrofização](https://sciencing.com/eutrophication-affect-ph-1203
 Como sensor de Ph utiza-se, um [sensor](https://www.usinainfo.com.br/index.php?controller=attachment&id_attachment=553) analógico de baixo custo, com uma casa decimal 
 de precisão. 
 
-## Turbidez
+### Turbidez
 
 A aparência nebulosa da água devido a suspensão de partículas finas é denominada 
 [turbidez](https://onlinelibrary.wiley.com/doi/epdf/10.1111/j.1752-1688.2001.tb03624.x). Quanto maior a quantidade de partículas em suspensão, mais turva
 é a água. Possui uma importância biológica grande, uma água que se torna turva repentinamente pode indicar a presença de poluição, por exemplo. As partículas 
 podem prejudicar as brânquias dos peixes e diminuir a incidência de luz no ambiente sub aquático.
 
-Como sensor, utiliza-se um módulo analógico de baixo custo.
+Como sensor, utiliza-se um módulo analógico de baixo custo, [TS-300B](http://images.100y.com.tw/pdf_file/46-TS-300B.pdf).
+
+![sensor de turbidez](http://images.100y.com.tw/images/product_jpg_original/A061801.jpg)
 
 //TODO: Adicionar fotos
 
