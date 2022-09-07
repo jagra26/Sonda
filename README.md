@@ -10,6 +10,8 @@
 	* [TDS](#tds)
 * [Protótipo](#prototipo)
 
+---
+
 ## Introdução
 
 A água é o elemento essencial para a vida. Logo, mensurar sua qualidade é fundamental nas mais diversas áreas: políticas públicas, conservação ambiental,
@@ -109,11 +111,27 @@ Quanto mais clara estiver a água, maior a penetração da luz, e por sua vez,
 maior a quantidade de luz percebida pelo sensor. Da mesma forma, quanto
 mais turva a água, menor é a quantidade percebida pelo sensor.
 
+
 ### TDS
 
 TDS é o acrônimo em inglês para Total Dissolved Solid, ou sólidos 
 dissolvidos totais. Pode ser descrito como [a medida de sais inorgânicos, matéria orgânica e outros materiais dissolvidos na água](https://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=C9AC49848D8E364703B4E4C7957C5399?doi=10.1.1.483.218&rep=rep1&type=pdf).
-Essa grandeza está intimamente relacioada com a [salinidade](https://iopscience.iop.org/article/10.1088/1755-1315/118/1/012019/pdf) da água
+Essa grandeza está intimamente relacionada com a [salinidade](https://iopscience.iop.org/article/10.1088/1755-1315/118/1/012019/pdf) da água.
+
+Se tratando de água potável, um valor alto de TDS implica em um [sabor ruim](https://doi.org/10.1016/j.desal.2018.04.017). 
+No ambiente, o aumento dessa escala implica em um aumento de salinidade, que pode levar a mortandade de espécies. Também já foi [descrita](https://cdnsciencepub.com/doi/10.1139/f85-199) uma 
+correlação negativa significante entre a presença de íons $Na^+, Mg^{2+}, SO_4^{2-}, HCO_3^-$ e $CO_3^{2-}$ e a produção de clorofila tipo a.
+
+Diferente da turbidez, que mede os sólidos em suspensão, o TDS mede os 
+sólidos dissolvidos. Na prática, as moléculas desses sólidos se quebram em 
+íons. Esses íons aumentam a condutividade elétrica da água. E os sensores
+medem justamente essa condutividade, quanto mais condutiva, mais íons e 
+mais sólidos dissolvidos.
+
+O sensor utilizado no projeto é o [keyestudio TDS Meter v1.0](https://wiki.keyestudio.com/KS0429_keyestudio_TDS_Meter_V1.0).
+
+![TDS sensor](https://wiki.keyestudio.com/images/thumb/a/a7/KS0429-1.png/600px-KS0429-1.png)
+
 
 ---
 
