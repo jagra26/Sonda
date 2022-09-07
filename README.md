@@ -1,5 +1,15 @@
 # Sonda
 
+## Índice
+* [Introdução](#introdução)
+* [Arquitetura](#arquetura)
+* [Sensores](#sensores)
+	* [Temperatura](#temperatura)
+	* [pH](#ph)
+	* [Turbidez](#turbidez)
+	* [TDS](#tds)
+* [Protótipo](#prototipo)
+
 ## Introdução
 
 A água é o elemento essencial para a vida. Logo, mensurar sua qualidade é fundamental nas mais diversas áreas: políticas públicas, conservação ambiental,
@@ -13,6 +23,7 @@ da qualidade da água. Já [Xu et al., 2011](https://www.sciencedirect.com/scien
 
 Nesse contexto, uma sonda multiparametros de operação remota é uma solução aplicável. Não necessita de coletas, consegue gerar um grande volume de dados por um longo tempo e tem apenas um custo inicial.
 
+---
 
 ## Arquitetura
 
@@ -25,6 +36,8 @@ A alimentação é feita por uma placa solar com um regulador stepdown.
 A arquitetura do projeto pode ser vista abaixo:
 
 ![Arquitetura](./images/arquitetura.jpg)
+
+---
 
 ## Sensores
 
@@ -43,6 +56,8 @@ Como sensor de temperatura, utiliza-se o termistor [MF-58](https://cdn.awsli.com
 resistência interna de 10k ohms. Está conectado a placa principal em conjunto a um divisor de tensão. 
 E a temperatura é computada através da equação de [Steinhart & Hart, 1968](https://www.sciencedirect.com/science/article/abs/pii/0011747168900570?via%3Dihub).
 
+![thermistor](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4gyBLFEU9Bi2EIZIgDxRK5_8cXr6qh4mv8tjLU7s5FUcYz1KBjWSHsbwck3qdBqTh_1o&usqp=CAU)
+
 ### pH
 
 Sørensen descreveu pela primeira vez o pH como a concentração de íons de hidrogênio. [Atualmente](https://www.degruyter.com/document/doi/10.1351/pac200274112169/html), 
@@ -55,8 +70,24 @@ A [acidificação oceânica](https://books.google.com.br/books?id=eoxpAgAAQBAJ&h
 que prejudica diversos organismos e fotossíntese, e é mensurado através da escala de pH ao longo do tempo. Em reservatórios é uma grandeza que pode sugerir algum 
 processo de [eutrofização](https://sciencing.com/eutrophication-affect-ph-12036599.html), que pode ser resultado de poluição por esgotos ou fertilizantes.
 
-Como sensor de Ph utiza-se, um [sensor](https://www.usinainfo.com.br/index.php?controller=attachment&id_attachment=553) analógico de baixo custo, com uma casa decimal 
-de precisão. 
+Como sensor de Ph utiza-se, um [sensor](https://www.usinainfo.com.br/index.php?controller=attachment&id_attachment=553) analógico de baixo custo, 
+comumente utilizado em aquários.
+
+![sensor de pH](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR1UMuvRR4jMIf_MzYRWwL7j3kl0JXh_7xvHQ&usqp=CAU)
+
+Este tipo de sensor funciona medindo a diferença de tensão entre dois 
+eletrodos, um de referência e outro sensor. Ambos estão isolados em tubos 
+de vidro poroso para íons de hidrogênio. 
+O eletrodo de referência fica imerso em uma solução de pH neutro. Enquanto 
+o eletrodo sensor fica imerso em uma solução saturada de cloreto de 
+potássio. O conjunto é mergulhado na solução a ser medida. Conforme os 
+íons de hidrogênio se acumulam no vidro e substituem os íons metálicos do 
+tubo, há a formação de uma corrente elétrica, que é capturada pelos 
+eletrodos e a diferença entre as tensões é convertida em pH, pelo pHmetro.
+
+Um exemplo desse tipo de montagem é mostrado a seguir:
+
+![funcionamento pH](https://2.bp.blogspot.com/-XEanRs1BSxU/Vdn3oqHU8CI/AAAAAAAAEoo/k0gyucmU9Ow/s1600/pH-meter.png)
 
 ### Turbidez
 
@@ -65,11 +96,26 @@ A aparência nebulosa da água devido a suspensão de partículas finas é denom
 é a água. Possui uma importância biológica grande, uma água que se torna turva repentinamente pode indicar a presença de poluição, por exemplo. As partículas 
 podem prejudicar as brânquias dos peixes e diminuir a incidência de luz no ambiente sub aquático.
 
-Como sensor, utiliza-se um módulo analógico de baixo custo, [TS-300B](http://images.100y.com.tw/pdf_file/46-TS-300B.pdf).
+Como sensor, utiliza-se um módulo analógico de baixo custo, [TS-300B](http://images.100y.com.tw/pdf_file/46-TS-300B.pdf). Comumente utilizado
+em máquinas de lavar roupa ou lavar pratos. Com a função de fazer uma 
+medição da turbidez da água, antes e depois das lavagens, para saber se é 
+necessário mais um ciclo de limpeza.
 
-![sensor de turbidez](http://images.100y.com.tw/images/product_jpg_original/A061801.jpg)
+![sensor de turbidez](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIhEUWTij3a4OiTMQDXJAizL-Tf4o1KTccMw&usqp=CAU)
 
-//TODO: Adicionar fotos
+Esse tipo de sensor funciona com a emissão de uma luz entre dois pontos 
+através da água. Ou seja, um ponto emite luz e o outro a percebe. 
+Quanto mais clara estiver a água, maior a penetração da luz, e por sua vez,
+maior a quantidade de luz percebida pelo sensor. Da mesma forma, quanto
+mais turva a água, menor é a quantidade percebida pelo sensor.
+
+### TDS
+
+TDS é o acrônimo em inglês para Total Dissolved Solid, ou sólidos 
+dissolvidos totais. Pode ser descrito como [a medida de sais inorgânicos, matéria orgânica e outros materiais dissolvidos na água](https://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=C9AC49848D8E364703B4E4C7957C5399?doi=10.1.1.483.218&rep=rep1&type=pdf).
+Essa grandeza está intimamente relacioada com a [salinidade](https://iopscience.iop.org/article/10.1088/1755-1315/118/1/012019/pdf) da água
+
+---
 
 ## Protótipo
 
