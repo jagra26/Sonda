@@ -1,19 +1,13 @@
-/*
-  Rui Santos
-  Complete project details at
-  https://RandomNerdTutorials.com/esp32-microsd-card-arduino/
-
-  This sketch was mofidied from: Examples > SD(esp32) > SD_Test
-*/
 
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
+#include "adc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "sd_card_utils.h"
-//#include "SdFat.h"
+#include "thermistor.h"
 
 #define SCK 14
 #define MISO 35
@@ -21,6 +15,8 @@
 #define CS 13
 #define MOUNT_POINT "/sd"
 #define THERMISTOR 25
+#define NO_OF_SAMPLES 8
+#define DELAY_ADC 10
 
 #define STACK_SIZE_SD 4096
 StaticTask_t x_task_buffer_sd;
@@ -28,6 +24,10 @@ StackType_t x_stack_sd[STACK_SIZE_SD];
 static TaskHandle_t sd_task = NULL;
 
 void task_sd(void *p);
+
+// TODO: create temp task
+// TODO: create queues
+// TODO: create lora task
 
 void setup() {
   Serial.begin(115200);
@@ -42,7 +42,7 @@ void task_sd(void *p) {
   // Initialize with log level and log output.
   SPIClass spi = SPIClass(VSPI);
   spi.begin(SCK, MISO, MOSI, CS);
-  if (!SD.begin(CS, spi, 80000000)) {
+  if (!SD.begin(CS, spi, 80000000, MOUNT_POINT)) {
     Serial.println("Card Mount Failed");
     return;
   }
@@ -53,6 +53,7 @@ void task_sd(void *p) {
     return;
   }
 
+  // TODO: transformar em função com switch
   Serial.print("SD Card Type: ");
   if (cardType == CARD_MMC) {
     Serial.println("MMC");
@@ -68,7 +69,9 @@ void task_sd(void *p) {
   uint64_t cardSize = SD.cardSize() / (1024 * 1024);
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
   writeFile(SD, "/data.csv", "Epoch Time, Temperature(ºC)\r\n");
+  uint32_t raw;
   while (1) {
-    // TODO receive and save the sensor data
+    raw = (uint32_t)adc_multi_sampling(THERMISTOR, NO_OF_SAMPLES, DELAY_ADC);
+    Serial.println(calculate_temp(raw));
   }
 }
