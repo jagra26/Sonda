@@ -9,6 +9,8 @@
 	* [Turbidez](#turbidez)
 	* [TDS](#tds)
 * [Protótipo](#prototipo)
+* [Instalação](#instalação)
+* [Esquemático](#esquemático)
 
 ---
 
@@ -143,6 +145,18 @@ Uma foto do hardware atual do projeto pode ser vista a seguir:
 ![prototype](images/prototype.jpg)
 
 O [placa com display](https://heltec.org/project/wifi-lora-32/) se trata do cliente LoRa, e recebe as mensagens enviadas pelo projeto.
+
+
+---
+
+## Instalação
+
+* Instale a [Arduino IDE](https://www.arduino.cc/en/software)
+* Instale o suporte a [ESP32](https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/)
+* Abra o sketch [Sonda.ino](Sonda\Sonda.ino) na IDE
+* Selecione a placa T-Beam
+* Compile
+
 
 ## Esquemático
 

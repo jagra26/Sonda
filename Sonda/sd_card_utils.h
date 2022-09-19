@@ -1,5 +1,6 @@
 
 #include "FS.h"
+#include "SD.h"
 
 void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
 
@@ -18,3 +19,7 @@ void renameFile(fs::FS &fs, const char *path1, const char *path2);
 void deleteFile(fs::FS &fs, const char *path);
 
 void testFileIO(fs::FS &fs, const char *path);
+
+bool check_cardType(uint8_t cardType);
+
+void get_cardSize_MB(uint64_t cardSize);

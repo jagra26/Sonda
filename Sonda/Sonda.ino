@@ -23,7 +23,13 @@ StaticTask_t x_task_buffer_sd;
 StackType_t x_stack_sd[STACK_SIZE_SD];
 static TaskHandle_t sd_task = NULL;
 
+#define STACK_SIZE_TEMP 2048
+StaticTask_t x_task_buffer_temp;
+StackType_t x_stack_temp[STACK_SIZE_TEMP];
+static TaskHandle_t temp_task = NULL;
+
 void task_sd(void *p);
+void task_temp(void *p);
 
 // TODO: create temp task
 // TODO: create queues
@@ -31,9 +37,13 @@ void task_sd(void *p);
 
 void setup() {
   Serial.begin(115200);
+  pinMode(THERMISTOR, INPUT);
 
   sd_task = xTaskCreateStatic(&task_sd, "task_sd", STACK_SIZE_SD, NULL, 10,
                               x_stack_sd, &x_task_buffer_sd);
+  temp_task =
+      xTaskCreateStatic(&task_temp, "task_temp", STACK_SIZE_TEMP,
+                        NULL, 5, x_stack_temp, &x_task_buffer_temp);
 }
 
 void loop() {}
@@ -46,32 +56,24 @@ void task_sd(void *p) {
     Serial.println("Card Mount Failed");
     return;
   }
-  uint8_t cardType = SD.cardType();
-
-  if (cardType == CARD_NONE) {
-    Serial.println("No SD card attached");
+  
+  if(!check_cardType(SD.cardType())) {
     return;
   }
+  get_cardSize_MB(SD.cardSize());
 
-  // TODO: transformar em função com switch
-  Serial.print("SD Card Type: ");
-  if (cardType == CARD_MMC) {
-    Serial.println("MMC");
-  } else if (cardType == CARD_SD) {
-    Serial.println("SDSC");
-  } else if (cardType == CARD_SDHC) {
-    Serial.println("SDHC");
-  } else {
-    Serial.println("UNKNOWN");
-  }
-
-  Serial.println("task_sd init");
-  uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-  Serial.printf("SD Card Size: %lluMB\n", cardSize);
   writeFile(SD, "/data.csv", "Epoch Time, Temperature(ºC)\r\n");
   uint32_t raw;
   while (1) {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
+}
+
+void task_temp(void *p){
+  uint32_t raw;
+  while(true) {
     raw = (uint32_t)adc_multi_sampling(THERMISTOR, NO_OF_SAMPLES, DELAY_ADC);
     Serial.println(calculate_temp(raw));
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
