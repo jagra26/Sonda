@@ -1,5 +1,6 @@
-#include <stdint.h>
 #include <math.h>
+#include <stdint.h>
+
 #define TEMPERATURENOMINAL 25
 #define NTC_BETA 3650.0
 #define NTC_NOMINAL_RESISTANCE 10000.0

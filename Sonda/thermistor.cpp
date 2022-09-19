@@ -1,6 +1,5 @@
 #include "thermistor.h"
 
-
 float calculate_temp(uint32_t adc_reading) {
   float average;
   average = NTC_ADC_MAX / adc_reading - 1;
