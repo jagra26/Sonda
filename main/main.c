@@ -106,34 +106,14 @@ float multi_sampling_adc2(adc_channel_t channel, adc_bits_width_t width,
  *
  * @param p
  */
-void task_tx(void *p) {
-  char payload[128];
-  while (true) {
-    if (xQueueReceive(tx_queue, (void *)&payload, 10) == pdTRUE) {
-      ESP_LOGI(LORATAG, "Lenght of payload: %d", strlen(payload));
-      lora_send_packet((uint8_t *)payload, strlen(payload));
-      ESP_LOGI(LORATAG, "Packet send: %s", payload);
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-  }
-}
+void task_tx(void *p);
 
 /**
  * @brief task to read temp
  *
  * @param p
  */
-void task_temp_read(void *p) {
-  while (true) {
-    float adc_reading = multi_sampling_adc2(channel, width, 10);
-    float temp = calculate_temp(adc_reading);
-    char temp_msg[10];
-    sprintf(temp_msg, "%.2f", temp);
-    xQueueSend(temp_queue, (void *)&temp_msg, 10);
-    ESP_LOGI(THERMTAG, "write on temp_queue");
-    vTaskDelay(pdMS_TO_TICKS(1000));
-  }
-}
+void task_temp_read(void *p);
 
 /**
  * @brief task to save in sd card
@@ -141,11 +121,55 @@ void task_temp_read(void *p) {
  *
  * @param p
  */
+void task_sd(void *p);
+
+void app_main() {
+  // rtc
+  setenv("TZ", "EST3EDT", 1);
+  tzset();
+  struct timeval tv;      // Cria a estrutura temporaria para funcao abaixo.
+  tv.tv_sec = 1647825026; // Atribui minha data atual. Voce pode usar o NTP
+                          // para
+                          // isso ou o site citado no artigo!
+  settimeofday(
+      &tv, NULL); // Configura o RTC para manter a data atribuida atualizada.
+
+  // mount_file_system(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS);
+
+  // create queues
+  temp_queue = xQueueCreate(10, sizeof(char[10]));
+  while (temp_queue == NULL)
+    ;
+  tx_queue = xQueueCreate(10, sizeof(char[128]));
+  while (tx_queue == NULL)
+    ;
+  // adc thermistor
+  check_efuse();
+  adc2_config_channel_atten((adc2_channel_t)channel, atten);
+  adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
+  esp_adc_cal_value_t val_type =
+      esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
+  print_char_val_type(val_type);
+  // lora
+  lora_init();
+  lora_set_frequency(866e6);
+  lora_enable_crc();
+  // tasks
+  sd_task = xTaskCreateStatic(&task_sd, "task_sd", STACK_SIZE_SD, NULL, 10,
+                              x_stack_sd, &x_task_buffer_sd);
+  tx_task = xTaskCreateStatic(&task_tx, "task_tx", STACK_SIZE_TX, NULL, 5,
+                              x_stack_tx, &x_task_buffer_tx);
+  temp_task =
+      xTaskCreateStatic(&task_temp_read, "task_temp_read", STACK_SIZE_TEMP,
+                        NULL, 5, x_stack_temp, &x_task_buffer_temp);
+}
+
 void task_sd(void *p) {
 
   // Use POSIX and C standard library functions to work with files.
 
   // First create a file.
+  mount_file_system(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS);
   const char *data_file = MOUNT_POINT "/data.csv";
   ESP_LOGI(SDTAG, "Opening file %s", data_file);
   FILE *f;
@@ -192,43 +216,26 @@ void task_sd(void *p) {
   }
 }
 
-void app_main() {
-  // rtc
-  setenv("TZ", "EST3EDT", 1);
-  tzset();
-  struct timeval tv;      // Cria a estrutura temporaria para funcao abaixo.
-  tv.tv_sec = 1647825026; // Atribui minha data atual. Voce pode usar o NTP
-                          // para
-                          // isso ou o site citado no artigo!
-  settimeofday(
-      &tv, NULL); // Configura o RTC para manter a data atribuida atualizada.
+void task_temp_read(void *p) {
+  while (true) {
+    float adc_reading = multi_sampling_adc2(channel, width, 10);
+    float temp = calculate_temp(adc_reading);
+    char temp_msg[10];
+    sprintf(temp_msg, "%.2f", temp);
+    xQueueSend(temp_queue, (void *)&temp_msg, 10);
+    ESP_LOGI(THERMTAG, "write on temp_queue");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
+}
 
-  mount_file_system(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS);
-
-  // create queues
-  temp_queue = xQueueCreate(10, sizeof(char[10]));
-  while (temp_queue == NULL)
-    ;
-  tx_queue = xQueueCreate(10, sizeof(char[128]));
-  while (tx_queue == NULL)
-    ;
-  // adc thermistor
-  check_efuse();
-  adc2_config_channel_atten((adc2_channel_t)channel, atten);
-  adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
-  esp_adc_cal_value_t val_type =
-      esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
-  print_char_val_type(val_type);
-  // lora
-  lora_init();
-  lora_set_frequency(866e6);
-  lora_enable_crc();
-  // tasks
-  sd_task = xTaskCreateStatic(&task_sd, "task_sd", STACK_SIZE_SD, NULL, 10,
-                              x_stack_sd, &x_task_buffer_sd);
-  tx_task = xTaskCreateStatic(&task_tx, "task_tx", STACK_SIZE_TX, NULL, 5,
-                              x_stack_tx, &x_task_buffer_tx);
-  temp_task =
-      xTaskCreateStatic(&task_temp_read, "task_temp_read", STACK_SIZE_TEMP,
-                        NULL, 5, x_stack_temp, &x_task_buffer_temp);
+void task_tx(void *p) {
+  char payload[128];
+  while (true) {
+    if (xQueueReceive(tx_queue, (void *)&payload, 10) == pdTRUE) {
+      ESP_LOGI(LORATAG, "Lenght of payload: %d", strlen(payload));
+      lora_send_packet((uint8_t *)payload, strlen(payload));
+      ESP_LOGI(LORATAG, "Packet send: %s", payload);
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+  }
 }
