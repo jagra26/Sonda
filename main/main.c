@@ -31,7 +31,7 @@ static const char *THERMTAG = "THERMISTOR";
 #define STACK_SIZE_SD 4096
 StaticTask_t x_task_buffer_sd;
 StackType_t x_stack_sd[STACK_SIZE_SD];
-#define STACK_SIZE_TX 2048
+#define STACK_SIZE_TX 4096
 StaticTask_t x_task_buffer_tx;
 StackType_t x_stack_tx[STACK_SIZE_TX];
 #define STACK_SIZE_TEMP 2048
@@ -113,13 +113,13 @@ void app_main() {
   // adc thermistor
 
   // tasks
-  sd_task = xTaskCreateStatic(&task_sd, "task_sd", STACK_SIZE_SD, NULL, 10,
-                              x_stack_sd, &x_task_buffer_sd);
   tx_task = xTaskCreateStatic(&task_tx, "task_tx", STACK_SIZE_TX, NULL, 5,
                               x_stack_tx, &x_task_buffer_tx);
   temp_task =
       xTaskCreateStatic(&task_temp_read, "task_temp_read", STACK_SIZE_TEMP,
                         NULL, 5, x_stack_temp, &x_task_buffer_temp);
+  sd_task = xTaskCreateStatic(&task_sd, "task_sd", STACK_SIZE_SD, NULL, 10,
+                              x_stack_sd, &x_task_buffer_sd);
   vTaskDelete(NULL);
 }
 
@@ -189,6 +189,7 @@ void task_temp_read(void *p) {
 }
 
 void task_tx(void *p) {
+  vTaskDelay(pdMS_TO_TICKS(1000));
   lora_init();
   lora_set_frequency(866e6);
   lora_enable_crc();

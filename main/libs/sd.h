@@ -9,6 +9,7 @@
 static const char *SDTAG = "SD CARD";
 #define SD true
 #define MOUNT_POINT "/sdcard"
+//#define FORMAT_IF_MOUNT_FAILED true
 #define SDSPI_DEFAULT_DMA 1
 
 /**
