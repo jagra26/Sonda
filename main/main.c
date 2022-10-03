@@ -154,6 +154,7 @@ void task_sd(void *p) {
         ESP_LOGE(SDTAG, "Failed to open file for writing");
         return;
       }
+      ESP_LOGI(SDTAG, "%s", temp_msg);
       data = *localtime(&tt); // Converte o tempo atual e atribui na estrutura
 
       strftime(data_formatada, 64, "%d/%m/%Y, %H:%M:%S",
@@ -163,9 +164,10 @@ void task_sd(void *p) {
       ESP_LOGI(SDTAG, "write data on file");
       fclose(f);
       ESP_LOGI(SDTAG, "close file: %s", data_file);
-      strcat(lora_msg, data_formatada);
+      sprintf(lora_msg, "%s,%s", data_formatada, temp_msg);
+      /*strcat(lora_msg, data_formatada);
       strcat(lora_msg, ", ");
-      strcat(lora_msg, temp_msg);
+      strcat(lora_msg, temp_msg);*/
       xQueueSend(tx_queue, (void *)&lora_msg, 10);
       ESP_LOGI(SDTAG, "write on tx_queue");
       strcpy(lora_msg, "");
@@ -182,6 +184,7 @@ void task_temp_read(void *p) {
     float temp = calculate_temp(adc_reading);
     char temp_msg[10];
     sprintf(temp_msg, "%.2f", temp);
+    ESP_LOGI(THERMTAG, "%s", temp_msg);
     xQueueSend(temp_queue, (void *)&temp_msg, 10);
     ESP_LOGI(THERMTAG, "write on temp_queue");
     vTaskDelay(pdMS_TO_TICKS(1000));
@@ -191,8 +194,11 @@ void task_temp_read(void *p) {
 void task_tx(void *p) {
   vTaskDelay(pdMS_TO_TICKS(1000));
   lora_init();
+  ESP_LOGI(LORATAG, "lora initialized");
   lora_set_frequency(866e6);
+  ESP_LOGI(LORATAG, "lora frequency seted");
   lora_enable_crc();
+  ESP_LOGI(LORATAG, "lora enable crc");
   char payload[128];
   while (true) {
     if (xQueueReceive(tx_queue, (void *)&payload, 10) == pdTRUE) {

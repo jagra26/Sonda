@@ -1,10 +1,11 @@
-#include <string.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
-#include "esp_log.h"
 #include "driver/spi_master.h"
+#include "soc/gpio_struct.h"
 #include "driver/gpio.h"
+#include <string.h>
 
 /*
  * Register definitions
@@ -35,7 +36,6 @@
 #define REG_DETECTION_THRESHOLD        0x37
 #define REG_SYNC_WORD                  0x39
 #define REG_DIO_MAPPING_1              0x40
-#define REG_DIO_MAPPING_2              0x41
 #define REG_VERSION                    0x42
 
 /*
@@ -65,31 +65,14 @@
 
 #define TIMEOUT_RESET                  100
 
-// SPI Stuff
-#if CONFIG_SPI2_HOST
-#define HOST_ID SPI2_HOST
-#elif CONFIG_SPI3_HOST
-#define HOST_ID SPI3_HOST
-#endif
-
-
-#define TAG "LORA"
-
 static spi_device_handle_t __spi;
 
 static int __implicit;
 static long __frequency;
 
-// use spi_device_transmit
-#define SPI_TRANSMIT 1
-
-// use buffer io
-// A little faster
-#define BUFFER_IO 1
-
-
 /**
- * Write a value to a register.  * @param reg Register index.
+ * Write a value to a register.
+ * @param reg Register index.
  * @param val Value to write.
  */
 void 
@@ -105,46 +88,9 @@ lora_write_reg(int reg, int val)
       .rx_buffer = in  
    };
 
-   //gpio_set_level(CONFIG_CS_GPIO, 0);
-#if SPI_TRANSMIT
+   gpio_set_level(CONFIG_CS_GPIO, 0);
    spi_device_transmit(__spi, &t);
-#else
-   spi_device_polling_transmit(__spi, &t);
-#endif
-   //gpio_set_level(CONFIG_CS_GPIO, 1);
-}
-
-/**
- * Write a buffer to a register.
- * @param reg Register index.
- * @param val Value to write.
- * @param len Byte length to write.
- */
-void
-lora_write_reg_buffer(int reg, uint8_t *val, int len)
-{
-   uint8_t *out;
-   out = (uint8_t *)malloc(len+1);
-   out[0] = 0x80 | reg;
-   for (int i=0;i<len;i++) {
-      out[i+1] = val[i];
-   }
-
-   spi_transaction_t t = {
-      .flags = 0,
-      .length = 8 * (len+1),
-      .tx_buffer = out,
-      .rx_buffer = NULL
-   };
-
-   //gpio_set_level(CONFIG_CS_GPIO, 0);
-#if SPI_TRANSMIT
-   spi_device_transmit(__spi, &t);
-#else
-   spi_device_polling_transmit(__spi, &t);
-#endif
-   //gpio_set_level(CONFIG_CS_GPIO, 1);
-   free(out);
+   gpio_set_level(CONFIG_CS_GPIO, 1);
 }
 
 /**
@@ -165,53 +111,10 @@ lora_read_reg(int reg)
       .rx_buffer = in
    };
 
-   //gpio_set_level(CONFIG_CS_GPIO, 0);
-#if SPI_TRANSMIT
+   gpio_set_level(CONFIG_CS_GPIO, 0);
    spi_device_transmit(__spi, &t);
-#else
-   spi_device_polling_transmit(__spi, &t);
-#endif
-   //gpio_set_level(CONFIG_CS_GPIO, 1);
+   gpio_set_level(CONFIG_CS_GPIO, 1);
    return in[1];
-}
-
-/**
- * Read the current value of a register.
- * @param reg Register index.
- * @return Value of the register.
- * @param len Byte length to read.
- */
-void
-lora_read_reg_buffer(int reg, uint8_t *val, int len)
-{
-   uint8_t *out;
-   uint8_t *in;
-   out = (uint8_t *)malloc(len+1);
-   in = (uint8_t *)malloc(len+1);
-   out[0] = reg;
-   for (int i=0;i<len;i++) {
-      out[i+1] = 0xff;
-   }
-
-   spi_transaction_t t = {
-      .flags = 0,
-      .length = 8 * (len+1),
-      .tx_buffer = out,
-      .rx_buffer = in
-   };
-
-   //gpio_set_level(CONFIG_CS_GPIO, 0);
-#if SPI_TRANSMIT
-   spi_device_transmit(__spi, &t);
-#else
-   spi_device_polling_transmit(__spi, &t);
-#endif
-   //gpio_set_level(CONFIG_CS_GPIO, 1);
-   for (int i=0;i<len;i++) {
-      val[i] = in[i+1];
-   }
-   free(out);
-   free(in);
 }
 
 /**
@@ -331,109 +234,25 @@ lora_set_spreading_factor(int sf)
 }
 
 /**
- * Get spreading factor.
- */
-int 
-lora_get_spreading_factor(void)
-{
-   return (lora_read_reg(REG_MODEM_CONFIG_2) >> 4);
-}
-
-/**
- * Set Mapping of pins DIO0 to DIO5
- * @param dio Number of DIO(0 to 5)
- * @param mode mode of DIO(0 to 3)
- */
-void 
-lora_set_dio_mapping(int dio, int mode)
-{
-   if (dio < 4) {
-      int _mode = lora_read_reg(REG_DIO_MAPPING_1);
-      if (dio == 0) {
-         _mode = _mode & 0x3F;
-         _mode = _mode | (mode << 6);
-      } else if (dio == 1) {
-         _mode = _mode & 0xCF;
-         _mode = _mode | (mode << 4);
-      } else if (dio == 2) {
-         _mode = _mode & 0xF3;
-         _mode = _mode | (mode << 2);
-      } else if (dio == 3) {
-         _mode = _mode & 0xFC;
-         _mode = _mode | mode;
-      }
-      lora_write_reg(REG_DIO_MAPPING_1, _mode);
-      ESP_LOGD(TAG, "REG_DIO_MAPPING_1=0x%02x", _mode);
-   } else if (dio < 6) {
-      int _mode = lora_read_reg(REG_DIO_MAPPING_2);
-      if (dio == 4) {
-         _mode = _mode & 0x3F;
-         _mode = _mode | (mode << 6);
-      } else if (dio == 5) {
-         _mode = _mode & 0xCF;
-         _mode = _mode | (mode << 4);
-      }
-      ESP_LOGD(TAG, "REG_DIO_MAPPING_2=0x%02x", _mode);
-      lora_write_reg(REG_DIO_MAPPING_2, _mode);
-   }
-}
-
-/**
- * Get Mapping of pins DIO0 to DIO5
- * @param dio Number of DIO(0 to 5)
- */
-int 
-lora_get_dio_mapping(int dio)
-{
-   if (dio < 4) {
-      int _mode = lora_read_reg(REG_DIO_MAPPING_1);
-      ESP_LOGD(TAG, "REG_DIO_MAPPING_1=0x%02x", _mode);
-      if (dio == 0) {
-         return ((_mode >> 6) & 0x03);
-      } else if (dio == 1) {
-         return ((_mode >> 4) & 0x03);
-      } else if (dio == 2) {
-         return ((_mode >> 2) & 0x03);
-      } else if (dio == 3) {
-         return (_mode & 0x03);
-      }
-   } else if (dio < 6) {
-      int _mode = lora_read_reg(REG_DIO_MAPPING_2);
-      ESP_LOGD(TAG, "REG_DIO_MAPPING_2=0x%02x", _mode);
-      if (dio == 4) {
-         return ((_mode >> 6) & 0x03);
-      } else if (dio == 5) {
-         return ((_mode >> 4) & 0x03);
-      }
-   }
-   return 0;
-}
-
-/**
  * Set bandwidth (bit rate)
- * @param sbw Signal bandwidth(0 to 9)
+ * @param sbw Bandwidth in Hz (up to 500000)
  */
 void 
-lora_set_bandwidth(int sbw)
+lora_set_bandwidth(long sbw)
 {
-   if (sbw < 10) {
-      lora_write_reg(REG_MODEM_CONFIG_1, (lora_read_reg(REG_MODEM_CONFIG_1) & 0x0f) | (sbw << 4));
-   }
-}
+   int bw;
 
-/**
- * Get bandwidth (bit rate)
- * @param sbw Signal bandwidth(0 to 9)
- */
-int 
-lora_get_bandwidth(void)
-{
-   //int bw;
-   //bw = lora_read_reg(REG_MODEM_CONFIG_1) & 0xf0;
-   //ESP_LOGD(TAG, "bw=0x%02x", bw);
-   //bw = bw >> 4;
-   //return bw;
-   return ((lora_read_reg(REG_MODEM_CONFIG_1) & 0xf0) >> 4);
+   if (sbw <= 7.8E3) bw = 0;
+   else if (sbw <= 10.4E3) bw = 1;
+   else if (sbw <= 15.6E3) bw = 2;
+   else if (sbw <= 20.8E3) bw = 3;
+   else if (sbw <= 31.25E3) bw = 4;
+   else if (sbw <= 41.7E3) bw = 5;
+   else if (sbw <= 62.5E3) bw = 6;
+   else if (sbw <= 125E3) bw = 7;
+   else if (sbw <= 250E3) bw = 8;
+   else bw = 9;
+   lora_write_reg(REG_MODEM_CONFIG_1, (lora_read_reg(REG_MODEM_CONFIG_1) & 0x0f) | (bw << 4));
 }
 
 /**
@@ -451,15 +270,6 @@ lora_set_coding_rate(int denominator)
 }
 
 /**
- * Get coding rate 
- */ 
-int 
-lora_get_coding_rate(void)
-{
-   return ((lora_read_reg(REG_MODEM_CONFIG_1) & 0x0E) >> 1);
-}
-
-/**
  * Set the size of preamble.
  * @param length Preamble length in symbols.
  */
@@ -468,18 +278,6 @@ lora_set_preamble_length(long length)
 {
    lora_write_reg(REG_PREAMBLE_MSB, (uint8_t)(length >> 8));
    lora_write_reg(REG_PREAMBLE_LSB, (uint8_t)(length >> 0));
-}
-
-/**
- * Get the size of preamble.
- */
-long
-lora_get_preamble_length(void)
-{
-   long preamble;
-   preamble = lora_read_reg(REG_PREAMBLE_MSB) << 8;
-   preamble = preamble + lora_read_reg(REG_PREAMBLE_LSB);
-   return preamble;
 }
 
 /**
@@ -521,11 +319,10 @@ lora_init(void)
    /*
     * Configure CPU hardware to communicate with the radio chip
     */
-   gpio_reset_pin(CONFIG_RST_GPIO);
+   gpio_pad_select_gpio(CONFIG_RST_GPIO);
    gpio_set_direction(CONFIG_RST_GPIO, GPIO_MODE_OUTPUT);
-   gpio_reset_pin(CONFIG_CS_GPIO);
+   gpio_pad_select_gpio(CONFIG_CS_GPIO);
    gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
-   gpio_set_level(CONFIG_CS_GPIO, 1);
 
    spi_bus_config_t bus = {
       .miso_io_num = CONFIG_MISO_GPIO,
@@ -537,20 +334,17 @@ lora_init(void)
    };
            
    ret = spi_bus_initialize(VSPI_HOST, &bus, 0);
-   //ret = spi_bus_initialize(HOST_ID, &bus, 0);
-   //ret = spi_bus_initialize(HOST_ID, &bus, SPI_DMA_CH_AUTO);
    assert(ret == ESP_OK);
 
    spi_device_interface_config_t dev = {
       .clock_speed_hz = 9000000,
       .mode = 0,
-      .spics_io_num = CONFIG_CS_GPIO,
-      .queue_size = 7,
+      .spics_io_num = -1,
+      .queue_size = 1,
       .flags = 0,
       .pre_cb = NULL
    };
-   //ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
-   ret = spi_bus_add_device(HOST_ID, &dev, &__spi);
+   ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
    assert(ret == ESP_OK);
 
    /*
@@ -565,13 +359,10 @@ lora_init(void)
    uint8_t i = 0;
    while(i++ < TIMEOUT_RESET) {
       version = lora_read_reg(REG_VERSION);
-      ESP_LOGD(TAG, "version=0x%02x", version);
       if(version == 0x12) break;
       vTaskDelay(2);
    }
-   ESP_LOGD(TAG, "i=%d, TIMEOUT_RESET=%d", i, TIMEOUT_RESET);
-   if (i == TIMEOUT_RESET + 1) return 0; // Illegal version
-   //assert(i < TIMEOUT_RESET + 1); // at the end of the loop above, the max value i can reach is TIMEOUT_RESET + 1
+   assert(i <= TIMEOUT_RESET + 1); // at the end of the loop above, the max value i can reach is TIMEOUT_RESET + 1
 
    /*
     * Default configuration.
@@ -601,12 +392,8 @@ lora_send_packet(uint8_t *buf, int size)
    lora_idle();
    lora_write_reg(REG_FIFO_ADDR_PTR, 0);
 
-#if BUFFER_IO
-   lora_write_reg_buffer(REG_FIFO, buf, size);
-#else
    for(int i=0; i<size; i++) 
       lora_write_reg(REG_FIFO, *buf++);
-#endif
    
    lora_write_reg(REG_PAYLOAD_LENGTH, size);
    
@@ -651,12 +438,8 @@ lora_receive_packet(uint8_t *buf, int size)
    lora_idle();   
    lora_write_reg(REG_FIFO_ADDR_PTR, lora_read_reg(REG_FIFO_RX_CURRENT_ADDR));
    if(len > size) len = size;
-#if BUFFER_IO
-   lora_read_reg_buffer(REG_FIFO, buf, len);
-#else
    for(int i=0; i<len; i++) 
       *buf++ = lora_read_reg(REG_FIFO);
-#endif
 
    return len;
 }
@@ -670,16 +453,6 @@ lora_received(void)
    if(lora_read_reg(REG_IRQ_FLAGS) & IRQ_RX_DONE_MASK) return 1;
    return 0;
 }
-
-/**
- * Returns RegIrqFlags.
- */
-int
-lora_get_irq(void)
-{
-   return (lora_read_reg(REG_IRQ_FLAGS));
-}
-
 
 /**
  * Return last packet's RSSI.
