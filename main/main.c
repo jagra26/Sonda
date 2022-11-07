@@ -1,3 +1,6 @@
+#include "FS.h"
+#include "SD.h"
+#include "SPI.h"
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 #include "freertos/FreeRTOS.h"

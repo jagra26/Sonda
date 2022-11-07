@@ -1,5 +1,58 @@
-idf_component_register(SRCS "main.c"
-							"libs/thermistor.c"
-							"libs/sd.c"
-							"libs/adc.c"
-                    INCLUDE_DIRS "libs/")
+set(CORE_SRCS
+	libs/arduino/cores/esp32/base64.cpp
+	libs/arduino/cores/esp32/cbuf.cpp
+	libs/arduino/cores/esp32/esp32-hal-adc.c
+	libs/arduino/cores/esp32/esp32-hal-bt.c
+	libs/arduino/cores/esp32/esp32-hal-cpu.c
+	libs/arduino/cores/esp32/esp32-hal-dac.c
+	libs/arduino/cores/esp32/esp32-hal-gpio.c
+	libs/arduino/cores/esp32/esp32-hal-i2c.c
+	libs/arduino/cores/esp32/esp32-hal-ledc.c
+	libs/arduino/cores/esp32/esp32-hal-matrix.c
+	libs/arduino/cores/esp32/esp32-hal-misc.c
+	libs/arduino/cores/esp32/esp32-hal-psram.c
+	libs/arduino/cores/esp32/esp32-hal-sigmadelta.c
+	libs/arduino/cores/esp32/esp32-hal-spi.c
+	libs/arduino/cores/esp32/esp32-hal-time.c
+	libs/arduino/cores/esp32/esp32-hal-timer.c
+	libs/arduino/cores/esp32/esp32-hal-tinyusb.c
+	libs/arduino/cores/esp32/esp32-hal-touch.c
+	libs/arduino/cores/esp32/esp32-hal-uart.c
+	libs/arduino/cores/esp32/esp32-hal-rmt.c
+	libs/arduino/cores/esp32/Esp.cpp
+	libs/arduino/cores/esp32/FunctionalInterrupt.cpp
+	libs/arduino/cores/esp32/HardwareSerial.cpp
+	libs/arduino/cores/esp32/IPAddress.cpp
+	libs/arduino/cores/esp32/IPv6Address.cpp
+	libs/arduino/cores/esp32/libb64/cdecode.c
+	libs/arduino/cores/esp32/libb64/cencode.c
+	libs/arduino/cores/esp32/main.cpp
+	libs/arduino/cores/esp32/MD5Builder.cpp
+	libs/arduino/cores/esp32/Print.cpp
+	libs/arduino/cores/esp32/stdlib_noniso.c
+	libs/arduino/cores/esp32/Stream.cpp
+	libs/arduino/cores/esp32/StreamString.cpp
+	libs/arduino/cores/esp32/USB.cpp
+	libs/arduino/cores/esp32/USBCDC.cpp
+	libs/arduino/cores/esp32/wiring_pulse.c
+	libs/arduino/cores/esp32/wiring_shift.c
+	libs/arduino/cores/esp32/WMath.cpp
+	libs/arduino/cores/esp32/WString.cpp
+  )
+set(LIBRARY_SRCS
+	main.c
+	libs/thermistor.c
+	libs/sd.c
+	libs/adc.c
+	libs/arduino/libraries/FS/src/FS.cpp
+	libs/arduino/libraries/SPI/src/SPI.cpp
+)
+set(includedirs
+	libs/
+	libs/arduino/libraries/FS/src
+	libs/arduino/libraries/SPI/src
+	libs/arduino/cores/esp32
+	libs/arduino/variants/esp32/)
+set(srcs ${CORE_SRCS} ${LIBRARY_SRCS})
+idf_component_register(SRCS ${srcs}
+                    INCLUDE_DIRS ${includedirs})
