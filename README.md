@@ -37,7 +37,7 @@ A alimentação é feita por uma placa solar com um regulador stepdown.
 
 A arquitetura do projeto pode ser vista abaixo:
 
-![Arquitetura](./images/arquitetura.jpg)
+![Arquitetura](./Images/arquitetura.jpg)
 
 ---
 
@@ -101,6 +101,45 @@ $$\begin{equation}
 
 Visto que $T_0$, $\beta$ e $R_0$ são constantes, basta possuir o valor de $R$ para encontrar-se $T$. Isto é feito colocando um resistor de valor conhecido em série
 com o termistor. Em seguida, mede-se a tensão entre os componentes e chega-se ao valor atual de $R$:
+
+![circuit_thermistor](./Images/circuit_thermistor.jpg)
+
+Onde $R_c$ é o resistor conhecido e $V_m$ é a tensão medida pelo ADC do projeto.
+
+Aplicando a lei de Ohm:
+
+$$\begin{equation}
+	V_{dd} = (R+R_c)i
+\end{equation}
+$$
+$$
+\begin{equation}
+	V_{m} = R_ci
+\end{equation}
+$$
+
+Onde $i$ é a corrente que atravessa o circuito. Com essas equações, chega-se a:
+
+$$
+\begin{equation}
+	V_{dd} = \frac{RV_m}{R_c}+V_m
+\end{equation}
+$$
+
+$$
+\begin{equation}
+	\frac{RV_m}{R_c} = V_{dd}-V_m
+\end{equation}
+$$
+
+
+$$
+\begin{equation}
+	R = (\frac{V_{dd}}{V_m}-1)R_c
+\end{equation}
+$$
+
+Com isso, dado uma tensão $V_m$, chega-se a uma resistência $R$ e consequentemente, a temperatura $T$.
 
 ![thermistor](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4gyBLFEU9Bi2EIZIgDxRK5_8cXr6qh4mv8tjLU7s5FUcYz1KBjWSHsbwck3qdBqTh_1o&usqp=CAU)
 
@@ -190,4 +229,4 @@ O [placa com display](https://heltec.org/project/wifi-lora-32/) se trata do clie
 
 ## Esquemático
 
-![wire diagram](images/wire_diagram.jpg)
+![wire diagram](Images/wire_diagram.jpg)
