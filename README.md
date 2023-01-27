@@ -61,13 +61,44 @@ Sua resistência varia conforme a temperatura do meio. Caso a resistência dimin
 
 Porém, trata-se de um sensor não-linear, o que implica na necessidade da utilização de uma equação mais complexa para se extrair, de fato, o valor de temperatura a partir da resistência do componente. Além de uma calibração que é feita para ajustar a saída dessa resposta não-linear.
 
-A temperatura é comumente computada através da equação de [Steinhart & Hart, 1968](https://www.sciencedirect.com/science/article/abs/pii/0011747168900570?via%3Dihub), que é dada por:
+A temperatura de resistores NTC, que é o utilizado no projeto, é comumente computada através da equação de [Steinhart & Hart, 1968](https://www.sciencedirect.com/science/article/abs/pii/0011747168900570?via%3Dihub), que é dada por:
 
 $$\begin{equation}
-	\frac{1}{T} =  A + B\log{R} + C(\log{R})^3
+	\frac{1}{T} =  A + B\ln{R} + C(\ln{R})^3
 \end{equation}$$
 
-Onde $T$ é a temperatura em Kelvin, $R$ é a resistência e $A$, $B$ e $C$ são constantes. Uma das mais formas de tratar essa equação é simplificá-la para a equação de parâmetro $\beta$
+Onde $T$ é a temperatura em Kelvin, $R$ é a resistência e $A$, $B$ e $C$ são constantes. Uma das formas mais comuns de tratar essa equação é simplificá-la para a equação de parâmetro $\beta$, como feito por [Petkovšek et. al, 2021](https://www.mdpi.com/2227-7390/9/18/2266):
+
+$$\begin{equation}
+	R = R_0e^{\beta(\frac{1}{T}-\frac{1}{T_0})}
+\end{equation}$$
+
+Onde $R_0$ é a resistência do termistor a uma temperatura $T_0$, que no caso vale 298.15K, ou 25°C. O valor de $T_0$ é dada pelo datasheet do componente.
+
+Em sequência, utiliza-se as seguintes substituições para $A$, $B$ e $C$:
+
+$$\begin{equation}
+	A = \frac{1}{T_0} - \frac{1}{\beta}\ln{R_0}
+\end{equation}$$
+
+$$\begin{equation}
+	B = \frac{1}{\beta}
+\end{equation}$$
+
+$$\begin{equation}
+	C = 0
+\end{equation}$$
+
+Resultando em:
+
+$$\begin{equation}
+	\frac{1}{T} =  \frac{1}{T_0} - \frac{1}{\beta}\ln{R_0} + (\frac{1}{\beta})\ln{R}
+\end{equation}$$
+
+$$\begin{equation}
+	\frac{1}{T} =  \frac{1}{T_0} + \frac{1}{\beta} \ln{\frac{R}{R_0}}
+\end{equation}$$
+
 
 ![thermistor](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4gyBLFEU9Bi2EIZIgDxRK5_8cXr6qh4mv8tjLU7s5FUcYz1KBjWSHsbwck3qdBqTh_1o&usqp=CAU)
 
