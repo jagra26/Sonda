@@ -99,6 +99,8 @@ $$\begin{equation}
 	\frac{1}{T} =  \frac{1}{T_0} + \frac{1}{\beta} \ln{\frac{R}{R_0}}
 \end{equation}$$
 
+Visto que $T_0$, $\beta$ e $R_0$ são constantes, basta possuir o valor de $R$ para encontrar-se $T$. Isto é feito colocando um resistor de valor conhecido em série
+com o termistor. Em seguida, mede-se a tensão entre os componentes e chega-se ao valor atual de $R$:
 
 ![thermistor](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4gyBLFEU9Bi2EIZIgDxRK5_8cXr6qh4mv8tjLU7s5FUcYz1KBjWSHsbwck3qdBqTh_1o&usqp=CAU)
 
