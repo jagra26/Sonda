@@ -54,14 +54,20 @@ que é expressa dentro uma escala arbitrária, e indica a direção do fluxo esp
 [Niswar et al., 2018](https://ieeexplore.ieee.org/document/8600828) trata de um ambiente de produção de caranguejos (*Portunus Pelagicus* e *Scylla serrata*)
 e mostra que fora de um intervalo certo suas larvas não se desenvolvem.
 
+#### Termistores
+
 Como sensor de temperatura, utiliza-se o termistor [MF-58](https://cdn.awsli.com.br/945/945993/arquivos/Datasheet%20MF58.pdf). Que é do tipo NTC e possui resistência interna de 10k ohms. 
 Segundo [Morris e Langari (220 pg. 364)](https://www.worldcat.org/pt/title/1196195913), termistores são pequenos semicondutores feitos de óxidos de metais ferrosos como crômio, cobalto, ferro, manganês e níquel.
+
+![thermistor](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4gyBLFEU9Bi2EIZIgDxRK5_8cXr6qh4mv8tjLU7s5FUcYz1KBjWSHsbwck3qdBqTh_1o&usqp=CAU)
 
 Sua resistência varia conforme a temperatura do meio. Caso a resistência diminua com o aumento da temperatura, possui um **C**oeficiente de **T**emperatura **N**egativo e é do tipo **NTC**. Caso contrário, possui um **C**oeficiente de **T**emperatura **P**ositivo e é do tipo **PTC**. Tendo um baixo custo e alta disponibilidade em diferentes encapsulamentos torna-se ideal para utilização neste projeto. 
 
 Porém, trata-se de um sensor não-linear, o que implica na necessidade da utilização de uma equação mais complexa para se extrair, de fato, o valor de temperatura a partir da resistência do componente. Além de uma calibração que é feita para ajustar a saída dessa resposta não-linear.
 
-A temperatura de resistores NTC, que é o utilizado no projeto, é comumente computada através da equação de [Steinhart & Hart, 1968](https://www.sciencedirect.com/science/article/abs/pii/0011747168900570?via%3Dihub), que é dada por:
+#### Equação de Steinhart
+
+A temperatura de termistores NTC, que é o utilizado no projeto, é comumente computada através da equação de [Steinhart & Hart, 1968](https://www.sciencedirect.com/science/article/abs/pii/0011747168900570?via%3Dihub), que é dada por:
 
 $$\begin{equation}
 	\frac{1}{T} =  A + B\ln{R} + C(\ln{R})^3
@@ -98,6 +104,8 @@ $$\begin{equation}
 $$\begin{equation}
 	\frac{1}{T} =  \frac{1}{T_0} + \frac{1}{\beta} \ln{\frac{R}{R_0}}
 \end{equation}$$
+
+#### Cálculo de $R$
 
 Visto que $T_0$, $\beta$ e $R_0$ são constantes, basta possuir o valor de $R$ para encontrar-se $T$. Isto é feito colocando um resistor de valor conhecido em série
 com o termistor. Em seguida, mede-se a tensão entre os componentes e chega-se ao valor atual de $R$:
@@ -141,7 +149,32 @@ $$
 
 Com isso, dado uma tensão $V_m$, chega-se a uma resistência $R$ e consequentemente, a temperatura $T$.
 
-![thermistor](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4gyBLFEU9Bi2EIZIgDxRK5_8cXr6qh4mv8tjLU7s5FUcYz1KBjWSHsbwck3qdBqTh_1o&usqp=CAU)
+#### Cálculo de temperatura
+
+Como esse valor de tensão é analógico, ele deve ser previamente convertido para um valor discreto, o que é feito pelo ADC (Analogical to Digital Converter) do sistema.
+Isto posto, o valor de $V_{dd}$ é considerado o maior valor que o ADC pode assumir, ou sua resolução. Se o ADC possui 10 bits de resolução, o maior valor é de $2^{10} = 1024$, por exemplo.
+Com essa conversão é possível calcular a temperatura através em um código da seguinte forma:
+```c
+	float calculate_temp(int adc_read){
+		float R = ((ADC_MAX/adc_read)-1)*Rc;
+		float temp = 1/T0 + (1/BETA_VALUE)*log(R/R0);
+		temp = 1/temp;
+		return temp;
+	}
+```
+
+#### Calibração
+
+Esse cálculo de temperatura retorna um valor próximo da temperatura, porém é necessário fazer uma calibração que segue o processo de [Earl, 2022](https://cdn-learn.adafruit.com/downloads/pdf/calibrating-sensors.pdf):
+
+1. Recolher amostras de temperatura com um termômetro aferido e com o projeto:
+	
+	![amostragem](./Images/temp_amos.jpg)
+	
+2. Realizar o ajuste de curvas, nesse caso feito por uma regressão linear:
+
+	![amostragem](./Images/linear_temp.jpg)
+
 
 ### pH
 
