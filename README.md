@@ -173,7 +173,28 @@ Esse cálculo de temperatura retorna um valor próximo da temperatura, porém é
 	
 2. Realizar o ajuste de curvas, nesse caso feito por uma regressão linear:
 
-	![amostragem](./Images/linear_temp.jpg)
+	![regressão](./Images/linear_temp.jpg)
+	
+3. Realizar a calibração de um ponto. Ajustando o offset da reta da regressão linear, para que ela se sobreponha a resposta ideal, do termometro aferido:
+
+	![calibração](./Images/calibrate_temp.jpg)
+	
+4. Recuperar a equação da reta calibrada e aplicar na função de cálculo da temperatura:
+
+$$ \begin{equation}
+	y(x) = ax + b
+\end{equation}$$
+
+Onde $x$ é a temperatura calculada por ```calculate_temp``` e $y$ é a temperatura real da água. $a$ e $b$ são os coeficientes da reta calibrada:
+
+```c
+	float calculate_temp_calibrated(float adc_read){
+		float x = calculate_temp(adc_read);
+		return x*a + b;
+	}
+
+```
+Os cálculos e gráficos da calibração foram feitas em [python](https://colab.research.google.com/drive/1osgXfeNHnKusb40EnVSFQ25BPt1Z2Xhu?usp=sharing) utilizando as bibliotecas sklearn e matplotlib.
 
 
 ### pH
