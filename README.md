@@ -265,6 +265,13 @@ sólidos dissolvidos. Na prática, as moléculas desses sólidos se quebram em
 medem justamente essa condutividade, quanto mais condutiva, mais íons e 
 mais sólidos dissolvidos.
 
+As unidades para TDS são $mg/L$ ou $ppm$, que são equivalentes, considerando a densidade da água $\rho = 1\frac{kg}{L}$ pela análise dimensional:
+
+
+$$ \begin{equation}
+	1\frac{mg}{L} = 1\frac{mg}{L\rho} = 1\frac{g10^{-3}}{g10^3} = 1\frac{1}{10^{-6}} = 1ppm
+\end{equation}$$
+
 O sensor utilizado no projeto é o [keyestudio TDS Meter v1.0](https://wiki.keyestudio.com/KS0429_keyestudio_TDS_Meter_V1.0).
 
 ![TDS sensor](https://wiki.keyestudio.com/images/thumb/a/a7/KS0429-1.png/600px-KS0429-1.png)
