@@ -253,24 +253,24 @@ mais turva a água, menor é a quantidade percebida pelo sensor.
 
 TDS é o acrônimo em inglês para Total Dissolved Solid, ou sólidos 
 dissolvidos totais. Pode ser descrito como [a medida de sais inorgânicos, matéria orgânica e outros materiais dissolvidos na água](https://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=C9AC49848D8E364703B4E4C7957C5399?doi=10.1.1.483.218&rep=rep1&type=pdf).
-Essa grandeza está intimamente relacionada com a [salinidade](https://iopscience.iop.org/article/10.1088/1755-1315/118/1/012019/pdf) da água.
+Essa grandeza está intimamente relacionada com a condutividade elétricada água, como explicado por [Rusydi, 2018](https://iopscience.iop.org/article/10.1088/1755-1315/118/1/012019/pdf).
 
 Se tratando de água potável, um valor alto de TDS implica em um [sabor ruim](https://doi.org/10.1016/j.desal.2018.04.017). 
-No ambiente, o aumento dessa escala implica em um aumento de salinidade, que pode levar a mortandade de espécies. Também já foi [descrita](https://cdnsciencepub.com/doi/10.1139/f85-199) uma 
+No ambiente, o aumento dessa escala implica em um aumento de salinidade, que pode levar a mortandade de espécies. Também já foi descrita por [Bierhuizen e Prepas, 1985](https://cdnsciencepub.com/doi/10.1139/f85-199) uma 
 correlação negativa significante entre a presença de íons $Na^+, Mg^{2+}, SO_4^{2-}, HCO_3^-$ e $CO_3^{2-}$ e a produção de clorofila tipo a.
+
+As unidades para TDS são $mg/L$ ou $ppm$, que são equivalentes, considerando a densidade da água $\rho = 1\frac{kg}{L}$ pela análise dimensional:
+
+$$ \begin{equation}
+	1\frac{mg}{L} = 1\frac{mg}{L\rho} = 1\frac{g10^{-3}}{g10^3} = 1\frac{1}{10^{6}} = 1ppm
+\end{equation}$$
 
 Diferente da turbidez, que mede os sólidos em suspensão, o TDS mede os 
 sólidos dissolvidos. Na prática, as moléculas desses sólidos se quebram em 
 íons. Esses íons aumentam a condutividade elétrica da água. E os sensores
 medem justamente essa condutividade, quanto mais condutiva, mais íons e 
-mais sólidos dissolvidos.
+mais sólidos dissolvidos. O principal componente desses sólidos, são sais TODO.
 
-As unidades para TDS são $mg/L$ ou $ppm$, que são equivalentes, considerando a densidade da água $\rho = 1\frac{kg}{L}$ pela análise dimensional:
-
-
-$$ \begin{equation}
-	1\frac{mg}{L} = 1\frac{mg}{L\rho} = 1\frac{g10^{-3}}{g10^3} = 1\frac{1}{10^{-6}} = 1ppm
-\end{equation}$$
 
 O sensor utilizado no projeto é o [keyestudio TDS Meter v1.0](https://wiki.keyestudio.com/KS0429_keyestudio_TDS_Meter_V1.0).
 
