@@ -269,7 +269,11 @@ Diferente da turbidez, que mede os sólidos em suspensão, o TDS mede os
 sólidos dissolvidos. Na prática, as moléculas desses sólidos se quebram em 
 íons. Esses íons aumentam a condutividade elétrica da água. E os sensores
 medem justamente essa condutividade, quanto mais condutiva, mais íons e 
-mais sólidos dissolvidos. O principal componente desses sólidos, são sais TODO.
+mais sólidos dissolvidos. O principal componente desses sólidos, são sais, que possuem ligações iônicas, e por isso é intimamente ligado ao nível de salinadade do sistema.
+
+A resolução [CONAMA N° 357, DE 17 DE MARÇO DE 2005](https://www.icmbio.gov.br/cepsul/images/stories/legislacao/Resolucao/2005/res_conama_357_2005_classificacao_corpos_agua_rtfcda_altrd_res_393_2007_397_2008_410_2009_430_2011.pdf) classifica os tipos de água de acordo com a salinidade da seguinte forma:
+
+
 
 
 O sensor utilizado no projeto é o [keyestudio TDS Meter v1.0](https://wiki.keyestudio.com/KS0429_keyestudio_TDS_Meter_V1.0).
