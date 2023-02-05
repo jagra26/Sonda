@@ -4,3 +4,6 @@
 [submodule "main/libs/TinyGPSPlus"]
 	path = main/libs/TinyGPSPlus
 	url = https://github.com/mikalhart/TinyGPSPlus
+[submodule "main/libs/ADS1115-Lite"]
+	path = main/libs/ADS1115-Lite
+	url = https://github.com/terryjmyers/ADS1115-Lite.git

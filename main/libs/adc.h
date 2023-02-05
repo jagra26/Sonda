@@ -7,6 +7,8 @@
 
 #define DEFAULT_VREF 1100 // Use adc2_vref_to_gpio() to obtain a better estimate
 #define NO_OF_SAMPLES 8   // Multisampling
+#define ADS1115_RESOLUTION 0.1875
+#define MILI_TO_VOLT 1000
 
 static const adc_channel_t channel =
     ADC_CHANNEL_8; // 10 channels: GPIO0, GPIO2, GPIO4, GPIO12 - GPIO15, GPIO25
@@ -25,3 +27,5 @@ void adc_init(void);
 
 float multi_sampling_adc2(adc_channel_t channel, adc_bits_width_t width,
                           int delay);
+
+float digit_to_voltage(int16_t adc_read);

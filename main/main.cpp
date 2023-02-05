@@ -1,9 +1,12 @@
+
+#include "ADS1115_lite.h"
 #include "Arduino.h"
 #include "FS.h"
 #include "SD.h"
 #include "SD_utils.h"
 #include "SPI.h"
 #include "TinyGPSPlus.h"
+#include "Wire.h"
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 #include "freertos/FreeRTOS.h"
@@ -23,8 +26,10 @@ extern "C" {
 #define MISO 35
 #define MOSI 15
 #define CS 13
+#define SDA_1 25
+#define SCL_1 33
 
-static const int led_pin = 32;
+ADS1115_lite ads(ADS1115_DEFAULT_ADDRESS);
 
 TinyGPSPlus _gps;
 HardwareSerial _serial_gps(1);
@@ -78,8 +83,23 @@ void task_sd(void *p);
 
 SPIClass spi = SPIClass(VSPI);
 
+void ads_config() {
+  ads.setGain(ADS1115_REG_CONFIG_PGA_6_144V);
+  ads.setSampleRate(ADS1115_REG_CONFIG_DR_128SPS);
+}
+
+int16_t ads_read() {
+  ads.setMux(ADS1115_REG_CONFIG_MUX_SINGLE_0); // Single mode input on AIN0
+                                               // (AIN0 - GND)
+  ads.triggerConversion();                     // Triggered mannually
+  return ads.getConversion();                  // returns int16_t value
+}
+
 extern "C" void app_main() {
-  pinMode(25, INPUT);
+  Serial.begin(115200);
+  delay(10);
+  ads_config();
+
   _serial_gps.begin(9600, SERIAL_8N1, 34, 12);
   while (_serial_gps.available()) {
     _gps.encode(_serial_gps.read());
@@ -112,6 +132,7 @@ extern "C" void app_main() {
   uint8_t cardType = SD.cardType();
 
   checkSD(cardType);
+  //
 
   // tasks
   xTaskCreate(task_tx, "task_tx", STACK_SIZE_TX, NULL, 5, &tx_task);
@@ -154,11 +175,22 @@ void task_sd(void *p) {
 }
 
 void task_temp_read(void *p) {
-  adc_init();
+  // adc_init();
+  // Serial.begin(9600);
+  int16_t adc0;
+  float Voltage = 0.0;
+
   while (true) {
-    float adc_reading = multi_sampling_adc2(channel, width, 10);
-    ESP_LOGI(THERMTAG, "%f", adc_reading);
-    float temp = calculate_temp_3(adc_reading);
+    // float adc_reading = multi_sampling_adc2(channel, width, 10);
+    adc0 = ads_read();
+    ESP_LOGI(THERMTAG, "%d", adc0);
+    adc0 <= 0 ? adc0 = 0 : adc0 = adc0;
+    Voltage = digit_to_voltage(adc0);
+    ESP_LOGI(THERMTAG, "%f", Voltage);
+    float temp = calculate_temp_4(Voltage);
+    ESP_LOGI(THERMTAG, "%f", temp);
+    temp = calibrate_temp(temp);
+    // float temp = calculate_temp_3(adc_reading);
     char temp_msg[10];
     sprintf(temp_msg, "%.2f", temp);
     ESP_LOGI(THERMTAG, "%s", temp_msg);

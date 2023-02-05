@@ -66,3 +66,7 @@ float multi_sampling_adc2(adc_channel_t channel, adc_bits_width_t width,
   adc_reading /= NO_OF_SAMPLES;
   return adc_reading;
 }
+
+float digit_to_voltage(int16_t adc_read) {
+  return adc_read * ADS1115_RESOLUTION / MILI_TO_VOLT;
+}

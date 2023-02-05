@@ -4,11 +4,13 @@ set(LIBRARY_SRCS
 	libs/SD_utils.cpp
 	../components/lora/lora.c
 	libs/TinyGPSPlus/src/TinyGPS++.cpp
+	libs/ADS1115-Lite/src/ADS1115_lite.cpp
 	)
 set(srcs ${LIBRARY_SRCS} main.cpp)
 set(include_dirs
 	libs/
 	libs/TinyGPSPlus/src/
+	libs/ADS1115-Lite/src/
 	../components/lora/
 	../components/lora/include/
 	)
