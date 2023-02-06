@@ -273,10 +273,14 @@ mais sólidos dissolvidos. O principal componente desses sólidos, são sais, qu
 
 A resolução [CONAMA N° 357, DE 17 DE MARÇO DE 2005](https://www.icmbio.gov.br/cepsul/images/stories/legislacao/Resolucao/2005/res_conama_357_2005_classificacao_corpos_agua_rtfcda_altrd_res_393_2007_397_2008_410_2009_430_2011.pdf) classifica os tipos de água de acordo com a salinidade da seguinte forma:
 
+| Tipo de água | Salinidade (s ppm) |
+|--------------|------------------|
+| Doce         | s ≤ 500             |
+| Salobra      | 500 ≤ s ≤ 3000     |
+| Salgada      | s > 3000            |
 
 
-
-O sensor utilizado no projeto é o [keyestudio TDS Meter v1.0](https://wiki.keyestudio.com/KS0429_keyestudio_TDS_Meter_V1.0).
+O sensor utilizado no projeto é o [keyestudio TDS Meter v1.0](https://wiki.keyestudio.com/KS0429_keyestudio_TDS_Meter_V1.0). Ele consegue medir até a escala de 1000 ppm, ou seja, o projeto consegue operar em água doce e parcialmente em água salobra. Caso a salinadade esteja fora da escala do sensor, sua medida não será confiável. Sendo possível apenas distinguir se a água é doce ou salobra até 1000 ppm. 
 
 ![TDS sensor](https://wiki.keyestudio.com/images/thumb/a/a7/KS0429-1.png/600px-KS0429-1.png)
 
