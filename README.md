@@ -151,12 +151,12 @@ Com isso, dado uma tensão $V_m$, chega-se a uma resistência $R$ e consequentem
 
 #### Cálculo de temperatura
 
-Como esse valor de tensão é analógico, ele deve ser previamente convertido para um valor discreto, o que é feito pelo ADC (Analogical to Digital Converter) do sistema.
-Isto posto, o valor de $V_{dd}$ é considerado o maior valor que o ADC pode assumir, ou sua resolução. Se o ADC possui 10 bits de resolução, o maior valor é de $2^{10} = 1024$, por exemplo.
-Com essa conversão é possível calcular a temperatura através em um código da seguinte forma:
+Como esse valor de tensão é analógico, ele é previamente convertido para um valor discreto para poder ser lido pelo sistema, o que é feito pelo ADC (Analogical to Digital Converter). Como a equação de temperatura depende do valor de tensão, há uma nova conversão de digital para analogico novamente. Isso é feito em outro módulo do código, e é explicado na seção de [ADC](#ADC).
+
+Abstraindo essas conversões, é possível calcular a temperatura através de um código da seguinte forma:
 ```c
-	float calculate_temp(int adc_read){
-		float R = ((ADC_MAX/adc_read)-1)*Rc;
+	float calculate_temp(float voltage){
+		float R = ((VDD/voltage)-1)*Rc;
 		float temp = 1/T0 + (1/BETA_VALUE)*log(R/R0);
 		temp = 1/temp;
 		return temp;
@@ -188,8 +188,8 @@ $$ \begin{equation}
 Onde $x$ é a temperatura calculada por ```calculate_temp``` e $y$ é a temperatura real da água. $a$ e $b$ são os coeficientes da reta calibrada:
 
 ```c
-	float calculate_temp_calibrated(float adc_read){
-		float x = calculate_temp(adc_read);
+	float calculate_temp_calibrated(float voltage){
+		float x = calculate_temp(voltage);
 		return x*a + b;
 	}
 
