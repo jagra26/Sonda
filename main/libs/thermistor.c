@@ -47,14 +47,10 @@ float calculate_temp_3(uint32_t adc_reading) {
 
 float calculate_temp_4(float voltage) {
   float R = ((NTC_VCC / voltage) - 1) * NTC_SERIES_RESISTANCE;
-  printf("%f\n", R);
   float temp =
       1 / NTC_CONST_TEMP + (1 / NTC_BETA) * log(R / NTC_SERIES_RESISTANCE);
-  printf("%f\n", temp);
   temp = 1 / temp;
-  printf("%f\n", temp);
   temp -= NTC_CONV_TEMP;
-  printf("%f\n", temp);
   return temp;
 }
 

@@ -1,5 +1,5 @@
 set(LIBRARY_SRCS
-	libs/adc.c
+	libs/adc.cpp
 	libs/thermistor.c
 	libs/SD_utils.cpp
 	../components/lora/lora.c
