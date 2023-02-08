@@ -299,13 +299,19 @@ Onde $V_s$ é a tensão do sensor, para uma melhor precisão o fabricante sugere
 Finalmente, pode-se calcular o valor de $TDS$:
 
 $$ \begin{equation}
-	TDS = \frac{133.42V_c^3-255.86V_c^2+857.39Vc}{2}
+	TDS = (133.42V_c^3-255.86V_c^2+857.39Vc)\frac{1}{2}
 \end{equation}$$
 
 ![TDS sensor](https://wiki.keyestudio.com/images/thumb/a/a7/KS0429-1.png/600px-KS0429-1.png)
 
-
 ---
+
+## ADC
+
+ADC é um acrônimo em inglês para **A**nalog to **D**igital **C**onverter. Esse componente recebe como entrada uma tensão analogica e converte para um valor numérico 
+inteiro, discretizado. A precisão de um ADC é dada em bits, que geram niveis de tensão que variam conforme a tensão máxima suportada. Por exemplo, caso possua 10 bits, possuirá $2^{10} = 1024$ níveis de tensão diferentes. Se a tensão de entrada máxima for de 5v, cada nível de tensão possuirá $\frac{5}{1024} = 4mV$. Se a leitura do ADC retornar 720, na prática, a entrada é de $720\times4mV=3.5V$.
+
+Em sua maioria, as MCUs possuem um ADC integrado, a esp32 não é diferente.
 
 ## Protótipo
 
