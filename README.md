@@ -8,6 +8,7 @@
 	* [pH](#ph)
 	* [Turbidez](#turbidez)
 	* [TDS](#tds)
+* [ADC](#adc)
 * [Protótipo](#prototipo)
 
 ---
@@ -308,10 +309,19 @@ $$ \begin{equation}
 
 ## ADC
 
-ADC é um acrônimo em inglês para **A**nalog to **D**igital **C**onverter. Esse componente recebe como entrada uma tensão analogica e converte para um valor numérico 
-inteiro, discretizado. A precisão de um ADC é dada em bits, que geram niveis de tensão que variam conforme a tensão máxima suportada. Por exemplo, caso possua 10 bits, possuirá $2^{10} = 1024$ níveis de tensão diferentes. Se a tensão de entrada máxima for de 5v, cada nível de tensão possuirá $\frac{5}{1024} = 4mV$. Se a leitura do ADC retornar 720, na prática, a entrada é de $720\times4mV=3.5V$.
+ADC é um acrônimo em inglês para **A**nalog to **D**igital **C**onverter. Esse componente recebe como entrada uma tensão analógica e converte para um valor numérico 
+inteiro, discretizado. A precisão de um ADC é dada em bits, que geram níveis de tensão que variam conforme a tensão máxima suportada. Por exemplo, caso possua 10 bits, possuirá $2^{10} = 1024$ níveis de tensão diferentes. Se a tensão de entrada máxima for de 5v, cada nível de tensão possuirá $\frac{5}{1024} = 4mV$. Se a leitura do ADC retornar 720, na prática, a entrada é de $720\times4mV=3.5V$.
 
-Em sua maioria, as MCUs possuem um ADC integrado, a esp32 não é diferente.
+Em sua maioria, as MCUs possuem um ADC integrado, a esp32 não é diferente, contando com um ADC de 12 bits. Contudo, seu comportamento não é linear, o que dificulta a calibração, sua tensão máxima de 
+entrada é de apenas 3.3V, sendo recomendado utilizar até 2.45V. Neste projeto, 4 sensores analógicos são usados, o que implica em 4 pinos de leitura, os sensores de 
+turbidez e pH possuem tensão de saída maior que a tensão máxima de leitura do ADC nativo da esp32, exigindo a utilização de divisores de tensão. Além de uma 
+complexidade de software maior do que normal para operações do tipo.
+
+Por esses fatores, optou-se pela utilização de um módulo ADC externo. No caso, o [ADS1115](https://cdn-shop.adafruit.com/datasheets/ads1115.pdf), que possui 16 bits de 
+precisão, sendo um de sinal e 15 de medição, entrada máxima de 5.5V, comportamento linear e comunicação I2C, ou seja, utiliza somente 2 pinos na comunicação com a MCU.
+Além de um consumo de apenas 150μA no modo de leitura contínuo. No modo de leitura única, tem desligamento automático, que é o usado na sonda.
+
+Apesar de possuir tensão máxima de entrada 5.5V, para calcular o valor do nível de tensão, pelo datasheet, utiliza-se a tensão de referencia de 6.144V. Como são 15 bits de medição,
 
 ## Protótipo
 
