@@ -303,6 +303,14 @@ $$ \begin{equation}
 	TDS = (133.42V_c^3-255.86V_c^2+857.39Vc)\frac{1}{2}
 \end{equation}$$
 
+A calibração do sensor é feita através de soluções aquosas com a quantidade de sólidos dissolvidos conhecidas. Para tal, com o auxílio de um copo medidor, mede-se um 
+volume de 100mL de água destilada. Em seguida, com uma balança de precisão, mede-se uma quantidade de um sólido solúvel em água, no caso essa calibração será feita com 
+cloreto de sódio (NaCl). Resultando nas seguintes misturas:
+
+#TODO: FAZER MISTURAS E TABELAR
+
+Em seguida, utiliza-se o mesmo processo de calibração do sensor de temperatura.
+
 ![TDS sensor](https://wiki.keyestudio.com/images/thumb/a/a7/KS0429-1.png/600px-KS0429-1.png)
 
 ---
@@ -326,6 +334,7 @@ Apesar de possuir tensão máxima de entrada 5.5V, para calcular o valor do nív
 $$ \begin{equation}
 	2^{15}=32768
 \end{equation}$$
+
 $$ \begin{equation}
 	\frac{6.144}{32768} = 0.1875mV
 \end{equation}$$
