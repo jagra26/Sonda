@@ -310,7 +310,7 @@ $$ \begin{equation}
 ## ADC
 
 ADC é um acrônimo em inglês para **A**nalog to **D**igital **C**onverter. Esse componente recebe como entrada uma tensão analógica e converte para um valor numérico 
-inteiro, discretizado. A precisão de um ADC é dada em bits, que geram níveis de tensão que variam conforme a tensão máxima suportada. Por exemplo, caso possua 10 bits, possuirá $2^{10} = 1024$ níveis de tensão diferentes. Se a tensão de entrada máxima for de 5v, cada nível de tensão possuirá $\frac{5}{1024} = 4mV$. Se a leitura do ADC retornar 720, na prática, a entrada é de $720\times4mV=3.5V$.
+inteiro, discretizado. A precisão de um ADC é dada em bits, que geram níveis de tensão que variam conforme a tensão máxima suportada. Por exemplo, caso possua 10 bits, possuirá $2^{10} = 1024$ níveis de tensão diferentes. Se a tensão de entrada máxima for de 5v, cada nível de tensão possuirá $\frac{5}{1024} = 4mV$ de resolução. Se a leitura do ADC retornar 720, na prática, a entrada é de $720\times4mV=3.5V$.
 
 Em sua maioria, as MCUs possuem um ADC integrado, a esp32 não é diferente, contando com um ADC de 12 bits. Contudo, seu comportamento não é linear, o que dificulta a calibração, sua tensão máxima de 
 entrada é de apenas 3.3V, sendo recomendado utilizar até 2.45V. Neste projeto, 4 sensores analógicos são usados, o que implica em 4 pinos de leitura, os sensores de 
@@ -321,7 +321,26 @@ Por esses fatores, optou-se pela utilização de um módulo ADC externo. No caso
 precisão, sendo um de sinal e 15 de medição, entrada máxima de 5.5V, comportamento linear e comunicação I2C, ou seja, utiliza somente 2 pinos na comunicação com a MCU.
 Além de um consumo de apenas 150μA no modo de leitura contínuo. No modo de leitura única, tem desligamento automático, que é o usado na sonda.
 
-Apesar de possuir tensão máxima de entrada 5.5V, para calcular o valor do nível de tensão, pelo datasheet, utiliza-se a tensão de referencia de 6.144V. Como são 15 bits de medição,
+Apesar de possuir tensão máxima de entrada 5.5V, para calcular o valor do nível de tensão, pelo datasheet, utiliza-se a tensão de referencia de 6.144V. Como são 15 bits de medição, resultando em uma resolução de:
+
+$$ \begin{equation}
+	2^{15}=32768
+\end{equation}$$
+$$ \begin{equation}
+	\frac{6.144}{32768} = 0.1875mV
+\end{equation}$$
+
+Todas as grandezas medidas aqui, precisam do valor de tensão calculados pelos sensores. Para converter a leitura do adc ara tensão, utiliza-se a seguinte função:
+
+```c
+	float digit_to_voltage(int16_t adc_read) {
+  return adc_read * ADS1115_RESOLUTION / MILI_TO_VOLT;
+}
+
+```
+Essa função recebe como parâmetro um inteiro com sinal de 16 bits, que é exatamente a forma de saída do ADC. Multiplicando essa entrada pelo valor de resolução, chega-se a tensão em milivolts. Divide-se esse valor por 1000, e chega-se ao resultado da tensão em volts. Essa função é implementada na biblioteca adc.h.
+
+Para uma maior precisão, é comum que se meça vários valores do ADC e computa-se a média ou a mediana. A mediana acaba sendo menos suscetível a ruídos, pois seu valor não é amplamente alterado por poucos valores muito altos ou muito baixos.
 
 ## Protótipo
 
