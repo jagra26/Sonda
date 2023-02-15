@@ -365,6 +365,25 @@ Essa função recebe como parâmetro um inteiro com sinal de 16 bits, que é exa
 
 Para uma maior precisão, é comum que se meça vários valores do ADC e computa-se a média ou a mediana. A mediana acaba sendo menos suscetível a ruídos, pois seu valor não é amplamente alterado por poucos valores muito altos ou muito baixos.
 
+
+## Comunicação
+
+A comunicação do projeto com o mundo exterior é feita de diferentes formas. Para transmitir os dados em tempo real, utiliza-se os protocolos LoRa e Wifi. Para atualização de dados, GPS. Para persistir os dados, salvamento em cartão SD. Por fim, para questões de desenvolvimento, Logs, via monitor serial.
+
+Todas elas são descritas a seguir:
+
+### LoRa
+
+LoRa é um acrônimo em inglês de Long Range, trata-se de um protocolo de comunicação sem fio de longa distância voltado para equipamentos Internet of Things (IoT). 
+
+Segundo [Augustin et al. 2016](https://www.mdpi.com/1424-8220/16/9/1466), a diferença da internet comum para IoT é que a segunda tem "menos tudo". Ou seja, os gargalos de potência, dados, memória, processamento são muito mais apertados. 
+
+Dentro desse contexto, ainda há situações em que protocolos de comunicação sem fio mais tradicionais como WiFi e Bluetooth não são viáveis, como em ambientes remotos e longas distâncias.
+
+Para suprir essa lacuna, surgiram uma série de tecnologias Low-Power Wide Area Networks (LPWAN), onde o LoRa se enquadra. Como explicado por [Zourmand et al. 2019](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8825008&tag=1).
+
+
+
 ## Protótipo
 
 No momento o projeto é um protótipo capaz de registrar a temperatura em um cartão sd, em um arquivo .csv, e transmitir mensagens via LoRa. Novos sensores, 
