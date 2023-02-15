@@ -9,6 +9,12 @@
 	* [Turbidez](#turbidez)
 	* [TDS](#tds)
 * [ADC](#adc)
+* [Comunicação](#comunicacao)
+	* [LoRa](#lora)
+	* [WiFi](#wifi)
+	* [GPS](#gps)
+	* [SD](#sd)
+	* [Logs](#logs) 	
 * [Protótipo](#prototipo)
 
 ---
