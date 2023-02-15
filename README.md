@@ -303,9 +303,17 @@ $$ \begin{equation}
 	TDS = (133.42V_c^3-255.86V_c^2+857.39Vc)\frac{1}{2}
 \end{equation}$$
 
-A calibração do sensor é feita através de soluções aquosas com a quantidade de sólidos dissolvidos conhecidas. Para tal, com o auxílio de um copo medidor, mede-se um 
-volume de 100mL de água destilada. Em seguida, com uma balança de precisão, mede-se uma quantidade de um sólido solúvel em água, no caso essa calibração será feita com 
-cloreto de sódio (NaCl). Resultando nas seguintes misturas:
+A calibração do sensor é feita através de soluções aquosas com a quantidade de sólidos dissolvidos conhecidas. Para tal, com o auxílio de uma balança de precisão, 
+mede-se 0.1g de cloreto de sódio (NaCl). Este valor é escolhido pois é a menor massa que a balança disponível consegue medir (TODO: adicionar modelo). As misturas são feitas da seguinte forma:
+
+| Volume de água (L) | Sólidos (mg) | Sólidos Dissolvidos Totais Real (mg/L) | Sólidos Dissolvidos Totais Previsto (mg/L) |
+|--------------------|--------------|----------------------------------------|--------------------------------------------|
+| 0.1                | 0            | 0                                      |                                            |
+| 0.1                | 100          | 1000                                   |                                            |
+| 0.2                | 100          | 500                                    |                                            |
+| 0.3                | 100          | 333                                    |                                            |
+| 0.4                | 100          | 250                                    |                                            |
+| 0.5                | 100          | 200                                    |                                            |
 
 #TODO: FAZER MISTURAS E TABELAR
 
