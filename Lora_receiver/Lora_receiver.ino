@@ -112,13 +112,19 @@ void loop() {
     Serial.println(time);
     ptr = strtok(NULL, ", ");
     char *temperaturastr = ptr;
+    ptr = strtok(NULL, ", ");
+    char *TDSstr = ptr;
     Serial.println(temperaturastr);
     Serial.println("converting to float");
     float temp = atof(temperaturastr);
+    Serial.println(TDSstr);
+    Serial.println("converting to int");
+    int TDS = atoi(TDSstr);
     Serial.println("thingspeak");
     ThingSpeak.setField(1, temp);
+    ThingSpeak.setField(2, TDS);
     Serial.println("set");
-    int writeSuccess = ThingSpeak.writeField( channelID, 1, temp, writeAPIKey);
+    int writeSuccess = ThingSpeak.writeFields( channelID, writeAPIKey);
     Serial.println(writeSuccess);
   }
     // print RSSI of packet

@@ -37,8 +37,11 @@ Nesse contexto, uma sonda multiparametros de operação remota é uma solução 
 ## Arquitetura
 
 O projeto tem como base a placa [TTGO-T-Beam](https://github.com/LilyGO/TTGO-T-Beam), um kit de desenvolvimento 
-[ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) que já conta com GPS e LoRa. 
-Sensores de temperatura, pH, TDS e turbidez fazem a aquisição dos dados, além do GPS. O armazenamento se dá através de um módulo de cartão SD. 
+[ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) que já conta com GPS, LoRa e suporte à bateria nativo. Sendo escolhida por já possuir essas tecnologias, sem a necessidade de módulos externos.
+
+Para a aquisição dos dados, utilaza-se 4 sensores: temperatura, pH, TDS e turbidez. Que são detalhados na seção de [sensores](#sensores) Para melhorar a precisão das leituras, utiliza-se um conversor analógico-digital externo, essa decisão é explicada melhor na seção de [ADC](#adc).
+
+ O armazenamento se dá através de um módulo de cartão SD. Os dados são gravados em um arquivo.csv.
 A transmissão dos dados se dá através de LoRa. O controle desses módulos é feito através do [FreeRTOS](https://www.freertos.org).
 A alimentação é feita por uma placa solar com um regulador stepdown.
 
@@ -382,7 +385,11 @@ Dentro desse contexto, ainda há situações em que protocolos de comunicação 
 
 Para suprir essa lacuna, surgiram uma série de tecnologias Low-Power Wide Area Networks (LPWAN), onde o LoRa se enquadra. Como explicado por [Zourmand et al. 2019](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8825008&tag=1).
 
+Fisicamente, opera nas faixas de frequencia de 433, 868 ou 915 MHz. Com payload variável entre 2 e 255 bytes. E com velocidade de entre 0.3 e 5.5kbps.
 
+Ela é utilizada no projeto para transmitir os dados medidos em tempo real, para um receptor LoRa. Esse segundo equipamento fica em um local com mais estrutura e atual não somente como um receptor, mas como um gateway, transferindo os dados para a internet via wifi. Esse processo é melhor detalhado na próxima seção.
+
+A tarefa responsável pela comunicação LoRa, atua após a persistência dos dados, detalhado na seção anterior.
 
 ## Protótipo
 

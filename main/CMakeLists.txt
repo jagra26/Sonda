@@ -2,6 +2,7 @@ set(LIBRARY_SRCS
 	libs/adc.cpp
 	libs/thermistor.c
 	libs/SD_utils.cpp
+	libs/tds.c
 	../components/lora/lora.c
 	libs/TinyGPSPlus/src/TinyGPS++.cpp
 	libs/ADS1115-Lite/src/ADS1115_lite.cpp
