@@ -13,19 +13,6 @@
 #define NTC_LINE_COEF 6    // 1.2487121159654997
 #define NTC_OFFSET 0
 
-/**
- * @brief function to calculate temperature using the steinhart method
- * @todo create a library to thermistor
- *
- * @param adc_reading input value of adc
- * @return float
- */
-float calculate_temp(uint32_t adc_reading);
-
-float calculate_temp_2(uint32_t adc_reading);
-
-float calculate_temp_3(uint32_t adc_reading);
-
-float calculate_temp_4(float voltage);
+float calculate_temp_raw(float voltage);
 
 float calibrate_temp(float temp_raw);

@@ -141,7 +141,7 @@ void task_sensor_read(void *p) {
     adc0 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_0, 32, 40);
     adc0 <= 0 ? adc0 = 0 : adc0 = adc0;
     Voltage = digit_to_voltage(adc0);
-    temp = calculate_temp_4(Voltage);
+    temp = calculate_temp_raw(Voltage);
     temp = calibrate_temp(temp);
     ESP_LOGI(SENSORTAG, "Temperature: %.2fºC", temp);
     adc1 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_1, 32, 40);
