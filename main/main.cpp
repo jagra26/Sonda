@@ -18,14 +18,21 @@ extern "C" {
 #include "tds.h"
 #include "thermistor.h"
 }
+#include "time.h"
+#include <WiFi.h>
 #include <esp_system.h>
 #include <stdio.h>
-#include <time.h>
 
 #define SCK 14
 #define MISO 35
 #define MOSI 15
 #define CS 13
+
+const char *ssid = "brisa-1921072";
+const char *password = "to7w55gc";
+const char *ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = 3;
+const int daylightOffset_sec = 3600;
 
 ADS1115_lite ads(ADS1115_DEFAULT_ADDRESS);
 SPIClass spi = SPIClass(VSPI);
@@ -84,23 +91,52 @@ void task_sensor_read(void *p);
  */
 void task_sd(void *p);
 
+void printLocalTime() {
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}
+
 extern "C" void app_main() {
+  pinMode(2, OUTPUT);
   Serial.begin(115200);
   delay(10);
   ads_config(&ads, ADS1115_REG_CONFIG_PGA_6_144V, ADS1115_REG_CONFIG_DR_128SPS);
+  // Connect to Wi-Fi
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected.");
 
-  _serial_gps.begin(9600, SERIAL_8N1, 34, 12);
+  // Init and get the time
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  String mcz_tz = "<-03>3";
+  setenv("TZ", mcz_tz.c_str(), 1);
+  tzset();
+  printLocalTime();
+  struct tm timeinfo;
+  struct timeval tv;
+  getLocalTime(&timeinfo);
+  tv.tv_sec = mktime(&timeinfo);
+  tv.tv_usec = 0;
+  settimeofday(&tv, NULL);
+
+  // disconnect WiFi as it's no longer needed
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+
+  /*_serial_gps.begin(9600, SERIAL_8N1, 34, 12);
   while (_serial_gps.available()) {
     _gps.encode(_serial_gps.read());
-  }
-  setenv("TZ", "EST3EDT", 1);
-  tzset();
-  struct timeval tv;      // Cria a estrutura temporaria para funcao abaixo.
-  tv.tv_sec = 1647825026; // Atribui minha data atual. Voce pode usar o NTP
-                          // para
-                          // isso ou o site citado no artigo!
-  settimeofday(
-      &tv, NULL); // Configura o RTC para manter a data atribuida atualizada.
+  }*/
 
   // create queues
   sensor_queue = xQueueCreate(10, sizeof(char[SENSOR_MSG_SIZE]));
@@ -113,9 +149,9 @@ extern "C" void app_main() {
   spi.begin(SCK, MISO, MOSI, CS);
   ESP_LOGI(SDTAG, "SPI begin");
   vTaskDelay(pdMS_TO_TICKS(500));
-  if (!SD.begin(CS, spi, 80000000, "/sd", 10)) {
-    ESP_LOGE(SDTAG, "Card Mount Failed");
-    return;
+  while (!SD.begin(CS, spi, 80000000, "/sd", 10)) {
+    ESP_LOGE(SDTAG, "Card Mount Failed - retrying in 5s");
+    delay(0.5);
   }
   uint8_t cardType = SD.cardType();
 
@@ -138,6 +174,7 @@ void task_sensor_read(void *p) {
   char sensor_msg[SENSOR_MSG_SIZE];
 
   while (true) {
+    digitalWrite(2, HIGH);
     adc0 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_0, 32, 40);
     adc0 <= 0 ? adc0 = 0 : adc0 = adc0;
     Voltage = digit_to_voltage(adc0);
@@ -152,6 +189,7 @@ void task_sensor_read(void *p) {
     ESP_LOGI(SENSORTAG, "%s", sensor_msg);
     xQueueSend(sensor_queue, (void *)&sensor_msg, 10);
     ESP_LOGI(SENSORTAG, "Write on sensor_queue");
+    digitalWrite(2, LOW);
     vTaskDelay(pdMS_TO_TICKS(2000));
   }
 }
@@ -170,6 +208,7 @@ void task_sd(void *p) {
                           // sempre que precisar obter o tempo atual
   char data_formatada[64];
   while (true) {
+    tt = time(NULL);
     if (xQueueReceive(sensor_queue, (void *)&sensor_msg, 10) == pdTRUE) {
       ESP_LOGI(SDTAG, "%s", sensor_msg);
       data = *localtime(&tt); // Converte o tempo atual e atribui na estrutura
@@ -205,7 +244,8 @@ void task_tx(void *p) {
       lora_send_packet((uint8_t *)payload, strlen(payload));
       ESP_LOGI(LORATAG, "Packet send: %s", payload);
       strcpy(payload, "");
-      vTaskDelay(pdMS_TO_TICKS(1000));
     }
+    // lora_sleep();
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }

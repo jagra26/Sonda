@@ -375,6 +375,19 @@ A comunicação do projeto com o mundo exterior é feita de diferentes formas. P
 
 Todas elas são descritas a seguir:
 
+### SD
+
+Todos os dados são salvos em um arquivo .csv no cartão de memória. Isto é feito para garantir que as amostras não serão perdidas caso haja alguma falha na comunicação em tempo real. A escolha pelo formato .csv se deu pela simplicidade de escrita e leveza. As strings que geram as linhas são facilmente geradas e o arquivo final não ocupa muito espaço. Um exemplo de arquivo é dado a seguir:
+
+| Data       | Hora  | Temperatura (°C) | TDS (ppm) | Turbidez (NTU) | pH  |
+|------------|-------|------------------|-----------|----------------|-----|
+| 23/02/2023 | 14:30 | 27               | 100       | 300            | 7.5 |
+| 23/02/2023 | 14:40 | 27.5             | 110       | 320            | 8   |
+
+Por segurança, os dados são primeiramente salvos no cartão e somente depois transmitidos a tarefa de controle da comunicação LoRa através de uma estrura de dados do tipo queue.
+
+TODO: REALIZAR CALCULOS DE CAPACIDADE
+
 ### LoRa
 
 LoRa é um acrônimo em inglês de Long Range, trata-se de um protocolo de comunicação sem fio de longa distância voltado para equipamentos Internet of Things (IoT). 
@@ -389,7 +402,9 @@ Fisicamente, opera nas faixas de frequencia de 433, 868 ou 915 MHz. Com payload 
 
 Ela é utilizada no projeto para transmitir os dados medidos em tempo real, para um receptor LoRa. Esse segundo equipamento fica em um local com mais estrutura e atual não somente como um receptor, mas como um gateway, transferindo os dados para a internet via wifi. Esse processo é melhor detalhado na próxima seção.
 
-A tarefa responsável pela comunicação LoRa, atua após a persistência dos dados, detalhado na seção anterior.
+A tarefa responsável pela comunicação LoRa, atua após a persistência dos dados. Recebendo os dados vindos da persistencia através de uma queue. A mesma linha que é salva no cartão de memória é transmitida via LoRa, utilizando o mesmo padrão .csv, que é posteriormente processado pelo receptor.
+
+No receptor, uma tarefa recebe os pacotes e os envia, através de uma queue, a tarefa de comunicação wifi.
 
 ## Protótipo
 

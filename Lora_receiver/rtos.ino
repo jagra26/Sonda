@@ -1,10 +1,10 @@
 #include "LoRa.h"
 #include <Arduino.h>
+#include <ThingSpeak.h>
+#include <WiFi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
-#include <WiFi.h>
-#include <ThingSpeak.h>
 #include <string.h>
 
 // define the pins used by the transceiver module
@@ -15,20 +15,19 @@
 #define LORA_MSG_SIZE 256
 static QueueHandle_t lora_queue;
 
-const char* ssid     = "brisa-1921072";
-const char* password = "to7w55gc";
+const char *ssid = "brisa-1921072";
+const char *password = "to7w55gc";
 
 // ThingSpeak information
 char thingSpeakAddress[] = "api.thingspeak.com";
 unsigned long channelID = 1998424;
-char* readAPIKey = "OL7XLXZBSTHO55I6";
-char* writeAPIKey = "849B5ZPP512LA7VS";
+char *readAPIKey = "OL7XLXZBSTHO55I6";
+char *writeAPIKey = "849B5ZPP512LA7VS";
 const unsigned long postingInterval = 120L * 1000;
 
 unsigned long lastConnectionTime = 0;
 long lastUpdateTime = 0;
 WiFiClient wifiClient;
-
 
 void task_rx(void *p);
 void task_wifi(void *p);
@@ -37,6 +36,14 @@ void setup() {
   // setup LoRa transceiver module
   LoRa.setPins(ss, rst, dio0);
   Serial.begin(9600);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 
   // replace the LoRa.begin(---E-) argument with your location's frequency
   // 433E6 for Asia
@@ -46,7 +53,7 @@ void setup() {
     Serial.println(".");
     delay(500);
   }
-  lora_queue = xQueueCreate(10, sizeof(char[LORA_MSG_SIZE]));
+  lora_queue = xQueueCreate(256, sizeof(String));
   xTaskCreate(&task_rx, "task_rx", 2048, NULL, 5, NULL);
   xTaskCreate(&task_wifi, "task_wifi", 2048, NULL, 5, NULL);
 }
@@ -55,7 +62,7 @@ void loop() {}
 
 void task_rx(void *p) {
   String lora_packet;
-  while(true) {
+  while (true) {
     int packetSize = LoRa.parsePacket();
     if (packetSize) {
       // received a packet
@@ -77,62 +84,56 @@ void task_rx(void *p) {
   }
 }
 
-void payload_separate(String lora_msg, char *date, char *time, char *temp, char*TDS, char *turbidity, char *ph){
-        char *ptr = strtok((char *)lora_msg.c_str(), ", ");
-        date = ptr;
-        Serial.println(date);
-        ptr = strtok(NULL, ", ");
-        time = ptr;
-        Serial.println(time);
-        ptr = strtok(NULL, ", ");
-        temp = ptr;
-        ptr = strtok(NULL, ", ");
-        TDS = ptr;
-        return;
+#define MAX_SIZE 100
+
+char** splitString(const char* input, int* numTokens) {
+    char** tokens = NULL;
+    char* token = NULL;
+    int tokenCount = 0;
+    char inputCopy[MAX_SIZE];
+    strcpy(inputCopy, input);
+
+    token = strtok(inputCopy, ",");
+    while (token != NULL) {
+        tokens = (char**)realloc(tokens, (tokenCount + 1) * sizeof(char*));
+        tokens[tokenCount] = (char*)malloc((strlen(token) + 1) * sizeof(char));
+        strcpy(tokens[tokenCount], token);
+        tokenCount++;
+
+        token = strtok(NULL, ", ");
+    }
+
+    *numTokens = tokenCount;
+    return tokens;
 }
 
-void task_wifi(void *p){
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-  }
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  ThingSpeak.begin(wifiClient);  // Initialize ThingSpeak
+void task_wifi(void *p) {
+  ThingSpeak.begin(wifiClient); // Initialize ThingSpeak
   String lora_msg;
-  while(true){
-    if (millis() - lastUpdateTime >=  postingInterval) {
+  while (true) {
+    if (millis() - lastUpdateTime >= postingInterval) {
+      lastUpdateTime = millis();
       if (xQueueReceive(lora_queue, (void *)&lora_msg, 10) == pdTRUE) {
-        lastUpdateTime = millis();
+        Serial.println(lora_msg);
+        //  lastUpdateTime = millis();
         Serial.println("begin split");
-        /*char *ptr = strtok((char *)lora_msg.c_str(), ", ");
-        char *date = ptr;
-        Serial.println(date);
-        ptr = strtok(NULL, ", ");
-        char *time = ptr;
-        Serial.println(time);
-        ptr = strtok(NULL, ", ");
-        char *temperaturastr = ptr;
-        ptr = strtok(NULL, ", ");
-        char *TDSstr = ptr;*/
-        char *date, *time, *temperaturastr, *TDSstr;
-        payload_separate(lora_msg, date, time, temperaturastr, TDSstr, NULL, NULL);
-        Serial.println(temperaturastr);
+        int numTokens =0;
+        char** tokens = splitString(lora_msg.c_str(), &numTokens);
+        Serial.println(tokens[2]);
         Serial.println("converting to float");
-        float temp = atof(temperaturastr);
-        Serial.println(TDSstr);
+        float temp = atof(tokens[2]);
+        Serial.println(tokens[3]);
         Serial.println("converting to int");
-        int TDS = atoi(TDSstr);
+        int TDS = atoi(tokens[3]);
         Serial.println("thingspeak");
         ThingSpeak.setField(1, temp);
         ThingSpeak.setField(2, TDS);
         Serial.println("set");
-        int writeSuccess = ThingSpeak.writeFields( channelID, writeAPIKey);
+        int writeSuccess = ThingSpeak.writeFields(channelID, writeAPIKey);
         Serial.println(writeSuccess);
       }
     }
-  }  
+    // Serial.println(millis() - lastUpdateTime);
+    vTaskDelay(1000);
+  }
 }
