@@ -124,7 +124,10 @@ extern "C" void app_main() {
   printLocalTime();
   struct tm timeinfo;
   struct timeval tv;
-  getLocalTime(&timeinfo);
+  while (!getLocalTime(&timeinfo)) {
+    delay(500);
+    Serial.print("trying to get datetime ");
+  }
   tv.tv_sec = mktime(&timeinfo);
   tv.tv_usec = 0;
   settimeofday(&tv, NULL);
@@ -151,7 +154,7 @@ extern "C" void app_main() {
   vTaskDelay(pdMS_TO_TICKS(500));
   while (!SD.begin(CS, spi, 80000000, "/sd", 10)) {
     ESP_LOGE(SDTAG, "Card Mount Failed - retrying in 5s");
-    delay(0.5);
+    delay(500);
   }
   uint8_t cardType = SD.cardType();
 
@@ -244,6 +247,7 @@ void task_tx(void *p) {
       lora_send_packet((uint8_t *)payload, strlen(payload));
       ESP_LOGI(LORATAG, "Packet send: %s", payload);
       strcpy(payload, "");
+      // lora_reset();
     }
     // lora_sleep();
     vTaskDelay(pdMS_TO_TICKS(1000));

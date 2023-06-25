@@ -14,7 +14,7 @@
 #include <ThingSpeak.h>
 #include <stdlib.h>
 // the OLED used
-U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);
+//U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);
 /*
 //define the pins used by the transceiver module
 #define ss 18

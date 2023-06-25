@@ -1,4 +1,5 @@
 #include "LoRa.h"
+#include "images.h"
 #include <Arduino.h>
 #include <ThingSpeak.h>
 #include <WiFi.h>
@@ -6,6 +7,11 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 #include <string.h>
+#include <SPI.h> 
+#include <Wire.h>
+#include <U8g2lib.h>
+#include "utils.h"
+
 
 // define the pins used by the transceiver module
 #define ss 18
@@ -13,7 +19,13 @@
 #define dio0 26
 
 #define LORA_MSG_SIZE 256
+
+U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);
+
 static QueueHandle_t lora_queue;
+int num = 0;
+char **last_send_data = splitString("00/00/0000, 00:00:00, 00.00, 000", &num);
+char **last_recv_data = splitString("00/00/0000, 00:00:00, 00.00, 000", &num);
 
 const char *ssid = "brisa-1921072";
 const char *password = "to7w55gc";
@@ -31,8 +43,17 @@ WiFiClient wifiClient;
 
 void task_rx(void *p);
 void task_wifi(void *p);
+void task_disp(void *p);
 
 void setup() {
+  // setup display
+  u8g2.begin();
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_ncenB14_tr);
+    u8g2.drawXBM( 0, 0, logo_width, logo_height, logo_bits);
+  } while ( u8g2.nextPage() );
+  delay(1000);
   // setup LoRa transceiver module
   LoRa.setPins(ss, rst, dio0);
   Serial.begin(9600);
@@ -54,16 +75,19 @@ void setup() {
     delay(500);
   }
   lora_queue = xQueueCreate(256, sizeof(String));
-  xTaskCreate(&task_rx, "task_rx", 2048, NULL, 5, NULL);
+  xTaskCreate(&task_rx, "task_rx", 2048, NULL, 6, NULL);
   xTaskCreate(&task_wifi, "task_wifi", 2048, NULL, 5, NULL);
+  xTaskCreate(&task_disp, "task_disp", 2048, NULL, 4, NULL);
 }
 
 void loop() {}
 
 void task_rx(void *p) {
   String lora_packet;
+  int numTokens =0;
   while (true) {
     int packetSize = LoRa.parsePacket();
+    //Serial.println(packetSize);
     if (packetSize) {
       // received a packet
       Serial.print("Received packet '");
@@ -71,6 +95,7 @@ void task_rx(void *p) {
       // read packet
       while (LoRa.available()) {
         lora_packet = LoRa.readString();
+        last_recv_data = splitString(lora_packet.c_str(), &numTokens);
         Serial.print(lora_packet);
         xQueueSend(lora_queue, (void *)&lora_packet, 10);
       }
@@ -80,31 +105,8 @@ void task_rx(void *p) {
       Serial.println(LoRa.packetRssi());
     }
     LoRa.read();
-    vTaskDelay(1);
+    vTaskDelay(100);
   }
-}
-
-#define MAX_SIZE 100
-
-char** splitString(const char* input, int* numTokens) {
-    char** tokens = NULL;
-    char* token = NULL;
-    int tokenCount = 0;
-    char inputCopy[MAX_SIZE];
-    strcpy(inputCopy, input);
-
-    token = strtok(inputCopy, ",");
-    while (token != NULL) {
-        tokens = (char**)realloc(tokens, (tokenCount + 1) * sizeof(char*));
-        tokens[tokenCount] = (char*)malloc((strlen(token) + 1) * sizeof(char));
-        strcpy(tokens[tokenCount], token);
-        tokenCount++;
-
-        token = strtok(NULL, ", ");
-    }
-
-    *numTokens = tokenCount;
-    return tokens;
 }
 
 void task_wifi(void *p) {
@@ -118,13 +120,13 @@ void task_wifi(void *p) {
         //  lastUpdateTime = millis();
         Serial.println("begin split");
         int numTokens =0;
-        char** tokens = splitString(lora_msg.c_str(), &numTokens);
-        Serial.println(tokens[2]);
+        last_send_data = splitString(lora_msg.c_str(), &numTokens);
+        Serial.println(last_send_data[2]);
         Serial.println("converting to float");
-        float temp = atof(tokens[2]);
-        Serial.println(tokens[3]);
+        float temp = atof(last_send_data[2]);
+        Serial.println(last_send_data[3]);
         Serial.println("converting to int");
-        int TDS = atoi(tokens[3]);
+        int TDS = atoi(last_send_data[3]);
         Serial.println("thingspeak");
         ThingSpeak.setField(1, temp);
         ThingSpeak.setField(2, TDS);
@@ -137,3 +139,50 @@ void task_wifi(void *p) {
     vTaskDelay(1000);
   }
 }
+
+void task_disp(void *p){
+  
+  while(true){    
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_12x6LED_tf);
+    u8g2.drawStr(0,12,"Last data received");
+    u8g2.setFont(u8g2_font_NokiaSmallBold_tf);
+    u8g2.drawStr(0,24,"Date");
+    u8g2.drawStr(0,32,"Time");
+    u8g2.drawStr(0,40,"Temp");
+    u8g2.drawStr(0,48,"TDS");
+    u8g2.drawStr(0,56,"pH");
+    u8g2.drawStr(0,64,"Turb");
+    u8g2.drawLine(30, 16, 30, 64);
+    u8g2.drawStr(32,24,last_recv_data[0]);
+    u8g2.drawStr(32,32,last_recv_data[1]);
+    u8g2.drawStr(32,40,last_recv_data[2]);
+    u8g2.drawStr(32,48,last_recv_data[3]);
+    u8g2.drawStr(32,56,"pH");
+    u8g2.drawStr(32,64,"Turb");
+  } while ( u8g2.nextPage() );
+  delay(10000);    
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_12x6LED_tf);
+    u8g2.drawStr(0,12,"Last data transmited");
+    u8g2.setFont(u8g2_font_NokiaSmallBold_tf);
+    u8g2.drawStr(0,24,"Date");
+    u8g2.drawStr(0,32,"Time");
+    u8g2.drawStr(0,40,"Temp");
+    u8g2.drawStr(0,48,"TDS");
+    u8g2.drawStr(0,56,"pH");
+    u8g2.drawStr(0,64,"Turb");
+    u8g2.drawLine(30, 16, 30, 64);
+    u8g2.drawStr(32,24,last_send_data[0]);
+    u8g2.drawStr(32,32,last_send_data[1]);
+    u8g2.drawStr(32,40,last_send_data[2]);
+    u8g2.drawStr(32,48,last_send_data[3]);
+    u8g2.drawStr(32,56,"pH");
+    u8g2.drawStr(32,64,"Turb");
+  } while ( u8g2.nextPage() );
+  delay(10000);
+  }
+}
+
