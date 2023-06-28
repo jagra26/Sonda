@@ -35,7 +35,7 @@ const long gmtOffset_sec = 3;
 const int daylightOffset_sec = 3600;
 
 ADS1115_lite ads(ADS1115_DEFAULT_ADDRESS);
-SPIClass spi = SPIClass(VSPI);
+SPIClass spi = SPIClass(HSPI);
 
 TinyGPSPlus _gps;
 HardwareSerial _serial_gps(1);
@@ -160,6 +160,15 @@ extern "C" void app_main() {
 
   checkSD(cardType);
 
+  lora_init();
+  ESP_LOGI(LORATAG, "lora initialized");
+  // lora_reset();
+  vTaskDelay(pdMS_TO_TICKS(1000));
+  lora_set_frequency(866e6);
+  ESP_LOGI(LORATAG, "lora frequency seted");
+  lora_enable_crc();
+  ESP_LOGI(LORATAG, "lora enable crc");
+
   // tasks
   xTaskCreate(task_tx, "task_tx", STACK_SIZE_TX, NULL, 5, &tx_task);
   xTaskCreate(task_sensor_read, "task_sensor_read", STACK_SIZE_TEMP, NULL, 5,
@@ -234,22 +243,15 @@ void task_sd(void *p) {
 
 void task_tx(void *p) {
   vTaskDelay(pdMS_TO_TICKS(1000));
-  lora_init();
-  ESP_LOGI(LORATAG, "lora initialized");
-  lora_set_frequency(866e6);
-  ESP_LOGI(LORATAG, "lora frequency seted");
-  lora_enable_crc();
-  ESP_LOGI(LORATAG, "lora enable crc");
   char payload[TX_MSG_SIZE] = "";
+  // unsigned long begin = millis();
   while (true) {
     if (xQueueReceive(tx_queue, (void *)&payload, 10) == pdTRUE) {
-      ESP_LOGI(LORATAG, "Lenght of payload: %d", strlen(payload));
+      vTaskDelay(pdMS_TO_TICKS(1000));
       lora_send_packet((uint8_t *)payload, strlen(payload));
       ESP_LOGI(LORATAG, "Packet send: %s", payload);
       strcpy(payload, "");
-      // lora_reset();
     }
-    // lora_sleep();
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }

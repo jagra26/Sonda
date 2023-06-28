@@ -143,45 +143,9 @@ void task_wifi(void *p) {
 void task_disp(void *p){
   
   while(true){    
-  u8g2.firstPage();
-  do {
-    u8g2.setFont(u8g2_font_12x6LED_tf);
-    u8g2.drawStr(0,12,"Last data received");
-    u8g2.setFont(u8g2_font_NokiaSmallBold_tf);
-    u8g2.drawStr(0,24,"Date");
-    u8g2.drawStr(0,32,"Time");
-    u8g2.drawStr(0,40,"Temp");
-    u8g2.drawStr(0,48,"TDS");
-    u8g2.drawStr(0,56,"pH");
-    u8g2.drawStr(0,64,"Turb");
-    u8g2.drawLine(30, 16, 30, 64);
-    u8g2.drawStr(32,24,last_recv_data[0]);
-    u8g2.drawStr(32,32,last_recv_data[1]);
-    u8g2.drawStr(32,40,last_recv_data[2]);
-    u8g2.drawStr(32,48,last_recv_data[3]);
-    u8g2.drawStr(32,56,"pH");
-    u8g2.drawStr(32,64,"Turb");
-  } while ( u8g2.nextPage() );
-  delay(10000);    
-  u8g2.firstPage();
-  do {
-    u8g2.setFont(u8g2_font_12x6LED_tf);
-    u8g2.drawStr(0,12,"Last data transmited");
-    u8g2.setFont(u8g2_font_NokiaSmallBold_tf);
-    u8g2.drawStr(0,24,"Date");
-    u8g2.drawStr(0,32,"Time");
-    u8g2.drawStr(0,40,"Temp");
-    u8g2.drawStr(0,48,"TDS");
-    u8g2.drawStr(0,56,"pH");
-    u8g2.drawStr(0,64,"Turb");
-    u8g2.drawLine(30, 16, 30, 64);
-    u8g2.drawStr(32,24,last_send_data[0]);
-    u8g2.drawStr(32,32,last_send_data[1]);
-    u8g2.drawStr(32,40,last_send_data[2]);
-    u8g2.drawStr(32,48,last_send_data[3]);
-    u8g2.drawStr(32,56,"pH");
-    u8g2.drawStr(32,64,"Turb");
-  } while ( u8g2.nextPage() );
+  formatDataPage(&u8g2, "Last data received", last_recv_data);  
+  delay(10000);
+  formatDataPage(&u8g2, "Last data transmited", last_send_data);  
   delay(10000);
   }
 }
