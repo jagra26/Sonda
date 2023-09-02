@@ -51,7 +51,19 @@ void setup() {
   u8g2.firstPage();
   do {
     u8g2.setFont(u8g2_font_ncenB14_tr);
+    u8g2.drawXBM( 48, 7, ufal_width, ufal_height, ufal_bits);
+  } while ( u8g2.nextPage() );
+  delay(5000);
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_ncenB14_tr);
     u8g2.drawXBM( 0, 0, logo_width, logo_height, logo_bits);
+  } while ( u8g2.nextPage() );
+  delay(1000);
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_ncenB14_tr);
+    u8g2.drawXBM( 63, 0, lacos_logo_width, lacos_logo_height, lacos_logo_bits);
   } while ( u8g2.nextPage() );
   delay(1000);
   // setup LoRa transceiver module
@@ -127,9 +139,13 @@ void task_wifi(void *p) {
         Serial.println(last_send_data[3]);
         Serial.println("converting to int");
         int TDS = atoi(last_send_data[3]);
+        Serial.println(last_send_data[4]);
+        Serial.println("converting to float");
+        float turbidity = atof(last_send_data[4]);
         Serial.println("thingspeak");
         ThingSpeak.setField(1, temp);
         ThingSpeak.setField(2, TDS);
+        ThingSpeak.setField(3, turbidity);
         Serial.println("set");
         int writeSuccess = ThingSpeak.writeFields(channelID, writeAPIKey);
         Serial.println(writeSuccess);

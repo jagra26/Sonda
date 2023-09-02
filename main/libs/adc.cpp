@@ -7,6 +7,11 @@ float digit_to_voltage(int16_t adc_read) {
 void ads_config(ADS1115_lite *ads, int gain_param, int sample_rate) {
   ads->setGain(gain_param);
   ads->setSampleRate(sample_rate);
+  if (!ads->testConnection()) {
+    ESP_LOGE(ADCTAG,
+             "ADS1115 Connection failed"); // oh man...something is wrong
+    return;
+  }
 }
 
 int16_t ads_read(ADS1115_lite *ads, int mux_param) {

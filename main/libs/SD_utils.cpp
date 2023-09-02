@@ -1,6 +1,6 @@
 #include "SD_utils.h"
 
-void checkSD(uint8_t cardType){
+void checkSD(uint8_t cardType) {
   if (cardType == CARD_NONE) {
     ESP_LOGE(SDTAG, "No SD card attached");
     return;
@@ -8,21 +8,21 @@ void checkSD(uint8_t cardType){
 
   ESP_LOGI(SDTAG, "SD Card Type: ");
   switch (cardType) {
-  {
-  case CARD_MMC:
-    ESP_LOGI(SDTAG, "MMC");
-    break;
-  case CARD_SD:
-    ESP_LOGI(SDTAG, "SDSC");
-    break;
-  case CARD_SDHC:
-    ESP_LOGI(SDTAG, "SDHC");
-    break;
-  default:
-    ESP_LOGI(SDTAG, "UNKNOWN");
-    break;
+    {
+    case CARD_MMC:
+      ESP_LOGI(SDTAG, "MMC");
+      break;
+    case CARD_SD:
+      ESP_LOGI(SDTAG, "SDSC");
+      break;
+    case CARD_SDHC:
+      ESP_LOGI(SDTAG, "SDHC");
+      break;
+    default:
+      ESP_LOGI(SDTAG, "UNKNOWN");
+      break;
+    }
   }
-}
 }
 
 void listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
@@ -83,7 +83,7 @@ void readFile(fs::FS &fs, const char *path) {
   ESP_LOGI(SDTAG, "Read from file: ");
   while (file.available()) {
     Serial.write(file.read());
-    //ESP_LOGI(SDTAG, file.read());
+    // ESP_LOGI(SDTAG, file.read());
   }
   file.close();
 }
@@ -177,4 +177,16 @@ void testFileIO(fs::FS &fs, const char *path) {
   end = millis() - start;
   ESP_LOGI(SDTAG, "%u bytes written for %u ms\n", 2048 * 512, end);
   file.close();
+}
+
+bool checkFile(fs::FS &fs, const char *path) {
+  ESP_LOGI(SDTAG, "Opening file: %s\n", path);
+
+  File file = fs.open(path);
+  if (!file) {
+    ESP_LOGE(SDTAG, "Failed to open file for reading");
+    return false;
+  }
+  file.close();
+  return true;
 }

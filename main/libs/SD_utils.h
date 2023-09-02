@@ -14,10 +14,11 @@
 
 #include "FS.h"
 #include "SD.h"
+#include "stdbool.h"
 
 static const char *SDTAG = "SD CARD";
 
-void checkSD( uint8_t cardType);
+void checkSD(uint8_t cardType);
 
 void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
 
@@ -36,3 +37,5 @@ void renameFile(fs::FS &fs, const char *path1, const char *path2);
 void deleteFile(fs::FS &fs, const char *path);
 
 void testFileIO(fs::FS &fs, const char *path);
+
+bool checkFile(fs::FS &fs, const char *path);
