@@ -1,12 +1,8 @@
 
-#define DELTA 0.0
+#define LEVEL_1_MAX 2.1
 
-float calculate_delta_u(float temp);
+#define LEVEL_2_MAX 3.1
 
-float calculate_u_25(float voltage, float delta);
+#define LEVEL_3_MAX 3.5
 
-float calculate_K(float u_25);
-
-float calculate_turbidity(float voltage, float K);
-
-float get_turbidity(float voltage);
+int get_turbidity(float voltage);

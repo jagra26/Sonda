@@ -4,6 +4,7 @@ set(LIBRARY_SRCS
 	libs/SD_utils.cpp
 	libs/tds.c
 	libs/turbidity.c
+	libs/pH.c
 	../components/lora/lora.c
 	libs/TinyGPSPlus/src/TinyGPS++.cpp
 	libs/ADS1115-Lite/src/ADS1115_lite.cpp

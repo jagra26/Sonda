@@ -21,3 +21,7 @@ int tds_calc(float voltage, float temperature) {
   tds /= 2;
   return (int)(tds) < 0 ? 0 : (int)(tds);
 }
+
+int tds_calib(int tds) {
+  return (int)(ANGULAR_CALIB_COEF * tds + LINEAR_CALIB_COEF);
+}

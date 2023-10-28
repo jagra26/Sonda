@@ -1,141 +1,252 @@
-/*********
-  Modified from the examples of the Arduino LoRa library
-  More resources: https://randomnerdtutorials.com
-*********/
-
+#include <Arduino.h>
 #include <SPI.h>
-#include <LoRa.h>
-#include <Wire.h>
-#include <U8x8lib.h>
-#include <time.h>
-#include <WiFi.h>
-#include <PubSubClient.h>
-#include <string.h>
 #include <ThingSpeak.h>
-#include <stdlib.h>
-// the OLED used
-//U8X8_SSD1306_128X64_NONAME_SW_I2C u8x8(/* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);
-/*
-//define the pins used by the transceiver module
-#define ss 18
-#define rst 14
-#define dio0 26
-static const int led_pin = LED_BUILTIN;
-const char* ssid     = "brisa-1921072";
-const char* password = "to7w55gc";
+#include <U8g2lib.h>
+#include <WiFi.h>
+#include <Wire.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/task.h>
+#include <string.h>
 
-// ThingSpeak information
+#include "LoRa.h"
+#include "images.h"
+#include "utils.h"
+
+/**
+ * @brief Slave Select pin of LoRa module.
+ *
+ */
+#define ss 18
+
+/**
+ * @brief Reset pin of LoRa module.
+ *
+ */
+#define rst 14
+
+/**
+ * @brief DIO0 pin of LoRa module.
+ *
+ */
+#define dio0 26
+
+/**
+ * @brief Max size of LoRa message.
+ *
+ */
+#define LORA_MSG_SIZE 256
+
+/**
+ * @brief OLED display structure.
+ *
+ */
+U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/15, /* data=*/4,
+                                         /* reset=*/16);
+
+/**
+ * @brief LoRa messages queue.
+ *
+ */
+static QueueHandle_t lora_queue;
+
+/**
+ * @brief Array of strings representing the last send data fields.
+ *
+ */
+char **last_send_data = splitString("00/00/0000, 00:00:00, 00.0, 000, 0, 0.0");
+
+/**
+ * @brief Array of strings representing the last received data fields.
+ *
+ */
+char **last_recv_data = splitString("00/00/0000, 00:00:00, 00.0, 000, 0, 0.0");
+
+/**
+ * @brief Wi-Fi network name.
+ *
+ */
+const char *ssid = "brisa-1921072";
+
+/**
+ * @brief Wi-Fi network password.
+ *
+ */
+const char *password = "to7w55gc";
+
+/**
+ * @brief ThingSpeak API adress.
+ *
+ */
 char thingSpeakAddress[] = "api.thingspeak.com";
+
+/**
+ * @brief ID channel from ThingSpeak.
+ *
+ */
 unsigned long channelID = 1998424;
-char* readAPIKey = "OL7XLXZBSTHO55I6";
-char* writeAPIKey = "849B5ZPP512LA7VS";
+
+/**
+ * @brief API key for write on channel.
+ *
+ */
+char *writeAPIKey = "849B5ZPP512LA7VS";
+
+/**
+ * @brief Time to wait for post data on cloud. 2 minutes in miliseconds.
+ *
+ */
 const unsigned long postingInterval = 120L * 1000;
 
-unsigned long lastConnectionTime = 0;
+/**
+ * @brief Time from the last data update.
+ *
+ */
 long lastUpdateTime = 0;
+
+/**
+ * @brief Client for Wi-Fi connection.
+ *
+ */
 WiFiClient wifiClient;
 
+/**
+ * @brief Task for receiving data from LoRa.
+ *
+ * @param p
+ */
+void task_rx(void *p);
+
+/**
+ * @brief Task for posting data to cloud.
+ *
+ * @param p
+ */
+void task_wifi(void *p);
+
+/**
+ * @brief Task to show data on display.
+ *
+ * @param p
+ */
+void task_disp(void *p);
+
 void setup() {
-  u8x8.begin();
-  u8x8.setFont(u8x8_font_chroma48medium8_r);
-  u8x8.clear();
-  u8x8.drawString(0, 0, "LoRa Receiver");
-  //initialize Serial Monitor
-  Serial.begin(9600);
-  while (!Serial);
-  Serial.println("LoRa Receiver");
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
 
-  WiFi.begin(ssid, password);
+  // Setup display
+  u8g2.begin();
 
-  while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-  }
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  pinMode(led_pin, OUTPUT);
+  // Show UFAL logo
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_ncenB14_tr);
+    u8g2.drawXBM(48, 7, ufal_width, ufal_height, ufal_bits);
+  } while (u8g2.nextPage());
+  delay(5000);
 
-  //setup LoRa transceiver module
+  // Show PELD logo
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_ncenB14_tr);
+    u8g2.drawXBM(0, 0, logo_width, logo_height, logo_bits);
+  } while (u8g2.nextPage());
+  delay(1000);
+
+  // Setup LoRa transceiver module
   LoRa.setPins(ss, rst, dio0);
-  
-  //replace the LoRa.begin(---E-) argument with your location's frequency 
-  //433E6 for Asia
-  //866E6 for Europe
-  //915E6 for North America
+  Serial.begin(115200);
+
+  // Replace the LoRa.begin(---E-) argument with your location's frequency
+  // 433E6 for Asia
+  // 866E6 for Europe
+  // 915E6 for North America
   while (!LoRa.begin(866E6)) {
     Serial.println(".");
     delay(500);
   }
-   // Change sync word (0xF3) to match the receiver
-  // The sync word assures you don't get LoRa messages from other LoRa transceivers
-  // ranges from 0-0xFF
-  LoRa.setSyncWord(0xF3);
-  Serial.println("LoRa Initializing OK!");
-  u8x8.clear();
-  u8x8.drawString(0, 0, "LoRa Initializing OK!");
-  ThingSpeak.begin(wifiClient);  // Initialize ThingSpeak
-  Serial.println("Thingspeak OK!");
 
+  // Init LoRa queue
+  lora_queue = xQueueCreate(256, sizeof(String));
+
+  // Wi-Fi connection
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // Init tasks
+  xTaskCreate(&task_rx, "task_rx", 4096, NULL, 6, NULL);
+  xTaskCreate(&task_wifi, "task_wifi", 2048, NULL, 5, NULL);
+  xTaskCreate(&task_disp, "task_disp", 2048, NULL, 4, NULL);
 }
 
-void loop() {
-  // try to parse packet
-  //digitalWrite(led_pin, HIGH);
-  //delay(500);
-  //digitalWrite(led_pin, LOW);
-  int packetSize = LoRa.parsePacket();
-  String LoRaData;
-  if (packetSize) {
-    Serial.println("");
-    // received a packet
-    Serial.print("Received packet '");
-    u8x8.clear();
-    u8x8.drawString(0, 0, "Received packet");
+void loop() {}
 
-    // read packet
-    while (LoRa.available()) {
-      LoRaData = LoRa.readString();
-      Serial.print(LoRaData);
-      u8x8.drawString(0, 1, LoRaData.c_str()); 
+void task_rx(void *p) {
+  String lora_packet;
+  while (true) {
+    int packetSize = LoRa.parsePacket();
+    // Serial.println(packetSize);
+    if (packetSize) {
+      // received a packet
+      Serial.print("Received packet '");
+
+      // read packet
+      while (LoRa.available()) {
+        lora_packet = LoRa.readString();
+        last_recv_data = splitString(lora_packet.c_str());
+        Serial.print(lora_packet);
+        xQueueSend(lora_queue, (void *)&lora_packet, 10);
+      }
+
+      // print RSSI of packet
+      Serial.print("' with RSSI ");
+      Serial.println(LoRa.packetRssi());
     }
-  if (millis() - lastUpdateTime >=  postingInterval) {
-    lastUpdateTime = millis();
-    Serial.println("begin split");
-    char *ptr = strtok((char *)LoRaData.c_str(), ", ");
-    char *date = ptr;
-    Serial.println(date);
-    ptr = strtok(NULL, ", ");
-    char *time = ptr;
-    Serial.println(time);
-    ptr = strtok(NULL, ", ");
-    char *temperaturastr = ptr;
-    ptr = strtok(NULL, ", ");
-    char *TDSstr = ptr;
-    Serial.println(temperaturastr);
-    Serial.println("converting to float");
-    float temp = atof(temperaturastr);
-    Serial.println(TDSstr);
-    Serial.println("converting to int");
-    int TDS = atoi(TDSstr);
-    Serial.println("thingspeak");
-    ThingSpeak.setField(1, temp);
-    ThingSpeak.setField(2, TDS);
-    Serial.println("set");
-    int writeSuccess = ThingSpeak.writeFields( channelID, writeAPIKey);
-    Serial.println(writeSuccess);
+    LoRa.read();
+    vTaskDelay(100);
   }
-    // print RSSI of packet
-    Serial.print("' with RSSI ");
-    Serial.println(LoRa.packetRssi());
-    digitalWrite(led_pin, HIGH);
-    delay(500);
-    digitalWrite(led_pin, LOW);
-    delay(500);
-  }
-  Serial.print(".");
-  delay(500);
 }
-*/
+
+void task_wifi(void *p) {
+  ThingSpeak.begin(wifiClient); // Initialize ThingSpeak
+  String lora_msg;
+  // struct fields send_fields;
+
+  while (true) {
+    if (millis() - lastUpdateTime >= postingInterval) {
+      lastUpdateTime = millis();
+      if (xQueueReceive(lora_queue, (void *)&lora_msg, 10) == pdTRUE) {
+        Serial.println(lora_msg);
+        //  lastUpdateTime = millis();
+        Serial.println("begin split");
+        last_send_data = splitString(lora_msg.c_str());
+        Serial.println("thingspeak");
+        ThingSpeak.setField(1, (float)atof(last_send_data[2]));
+        ThingSpeak.setField(2, atoi(last_send_data[3]));
+        ThingSpeak.setField(3, atoi(last_send_data[4]));
+        ThingSpeak.setField(4, (float)atof(last_send_data[5]));
+        Serial.println("set");
+        int writeSuccess = ThingSpeak.writeFields(channelID, writeAPIKey);
+        Serial.println(writeSuccess);
+      }
+    }
+    // Serial.println(millis() - lastUpdateTime);
+    vTaskDelay(1000);
+  }
+}
+
+void task_disp(void *p) {
+
+  while (true) {
+    formatDataPage(&u8g2, "Last data received", last_recv_data);
+    delay(10000);
+    formatDataPage(&u8g2, "Last data transmited", last_send_data);
+    delay(10000);
+    // update_display(&u8g2, 10000);
+  }
+}

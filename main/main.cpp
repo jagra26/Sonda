@@ -21,6 +21,7 @@
 
 extern "C" {
 #include "lora.h"
+#include "pH.h"
 #include "tds.h"
 #include "thermistor.h"
 #include "turbidity.h"
@@ -33,6 +34,7 @@ extern "C" {
 #define RELAY 2
 
 static const char *GPSTAG = "GPS";
+static const char *MAINTAG = "MAIN";
 
 const char *ssid = "brisa-1921072";
 const char *password = "to7w55gc";
@@ -114,22 +116,20 @@ extern "C" void app_main() {
   ads_config(&ads, ADS1115_REG_CONFIG_PGA_6_144V, ADS1115_REG_CONFIG_DR_128SPS);
 
   // Connect to Wi-Fi
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
+  ESP_LOGI(MAINTAG, "Connecting to %s\n", ssid);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(HALF_SECOND);
-    Serial.print(".");
+    ESP_LOGI(MAINTAG, ".");
   }
 
-  Serial.println(EMPTY_STRING);
-  Serial.println("WiFi connected.");
+  ESP_LOGI(MAINTAG, "\nWiFi connected.\n");
 
   // Init and get the time
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  String mcz_tz = "<-03>3";
+  /*String mcz_tz = "GMTGMT-1,M3.4.0/01,M10.4.0/02";
   setenv("TZ", mcz_tz.c_str(), 1);
-  tzset();
+  tzset();*/
   while (!getLocalTime(&timeinfo)) {
     delay(HALF_SECOND);
     Serial.print("trying to get datetime ");
@@ -187,40 +187,49 @@ extern "C" void app_main() {
  * @param p
  */
 void task_sensor_read(void *p) {
-  int16_t adc0;
-  int16_t adc1;
-  int16_t adc2;
+  int16_t adc0, adc1, adc2, adc3;
   float Voltage = 0.0;
-  float temp, turbidity, battery_voltage;
-  int tds;
+  float temp, ph;
+  int tds, turbidity;
   char sensor_msg[SENSOR_MSG_SIZE];
 
   while (true) {
     // Turn on sensors
     digitalWrite(RELAY, HIGH);
+    // vTaskDelay(pdMS_TO_TICKS(ONE_SECOND * 60));
 
     // read temperature
     adc0 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_0, 32, 40);
     adc0 <= 0 ? adc0 = 0 : adc0 = adc0;
     Voltage = digit_to_voltage(adc0);
     temp = calculate_temp_raw(Voltage);
-    ESP_LOGI(SENSORTAG, "Temperature raw: %.2fºC", temp);
+    ESP_LOGI(SENSORTAG, "Temperature raw: %.1fºC", temp);
     temp = calibrate_temp(temp);
-    ESP_LOGI(SENSORTAG, "Temperature: %.2fºC", temp);
+    ESP_LOGI(SENSORTAG, "Temperature: %.1fºC", temp);
 
     // read TDS
     adc1 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_1, 32, 40);
     Voltage = digit_to_voltage(adc1);
     tds = tds_calc(Voltage, temp);
+    tds = tds_calib(tds);
     ESP_LOGI(SENSORTAG, "TDS: %d ppm", tds);
 
     // read turbidity
     adc2 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_2, 32, 40);
     Voltage = digit_to_voltage(adc2);
-    turbidity = Voltage;
-    ESP_LOGI(SENSORTAG, "Turbidity: %.2f ppm", turbidity);
+    turbidity = get_turbidity(Voltage);
 
-    sprintf(sensor_msg, "%.2f, %d, %.2f", temp, tds, turbidity);
+    ESP_LOGI(SENSORTAG, "Turbidity: %d", turbidity);
+
+    // read pH
+    adc3 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_3, 32, 40);
+    Voltage = digit_to_voltage(adc3);
+    ph = Voltage;
+    ESP_LOGI(SENSORTAG, "ph voltage: %.1f", ph);
+    ph = ph_calc(ph);
+    ESP_LOGI(SENSORTAG, "ph: %.2f", ph);
+
+    sprintf(sensor_msg, "%.1f, %d, %d, %.1f", temp, tds, turbidity, ph);
     ESP_LOGI(SENSORTAG, "%s", sensor_msg);
     xQueueSend(sensor_queue, (void *)&sensor_msg, 10);
     ESP_LOGI(SENSORTAG, "Write on sensor_queue");
@@ -241,8 +250,8 @@ void task_sd(void *p) {
   ESP_LOGI(SDTAG, "SD Card Size: %lluMB\n", cardSize);
   if (!checkFile(SD, "/d.csv")) {
     writeFile(SD, "/d.csv",
-              "Date, Time, Temperature (ºC), TDS (ppm), Turbidity(V)\n");
-    appendFile(SD, "/d.csv", "-, -, -, -, -\n");
+              "Date, Time, Temperature (ºC), TDS (ppm), Turbidity(V), pH\n");
+    appendFile(SD, "/d.csv", "-, -, -, -, -, -\n");
   }
 
   char sensor_msg[SENSOR_MSG_SIZE];
@@ -305,17 +314,30 @@ void task_gps(void *p) {
       ESP_LOGI(GPSTAG, "gps values:\n Latitude: %10.6f\nLatitude: %10.6f\n",
                _gps.location.lat(), _gps.location.lng());
     }
-    if (_gps.date.isUpdated() && _gps.time.isUpdated() && _gps.date.isValid() &&
-        _gps.time.isValid()) {
-      timeinfo.tm_year = _gps.date.year(); // - 1900;
-      timeinfo.tm_mon = _gps.date.month(); // - 1; // Month, 0 - jan
-      timeinfo.tm_mday = _gps.date.day();  // Day of the month
+    if (_gps.date.year() >= timeinfo.tm_year + 1900) {
+      Serial.print(_gps.date.month());
+      Serial.print(F("/"));
+      Serial.print(_gps.date.day());
+      Serial.print(F("/"));
+      Serial.println(_gps.date.year());
+      Serial.print(_gps.time.hour());
+      Serial.print(":");
+      Serial.print(_gps.time.minute());
+      Serial.print(":");
+      Serial.println(_gps.time.second());
+
+      timeinfo.tm_year = _gps.date.year() - 1900;
+      timeinfo.tm_mon = _gps.date.month() - 1; // Month, 0 - jan
+      timeinfo.tm_mday = _gps.date.day();      // Day of the month
       timeinfo.tm_hour = _gps.time.hour();
       timeinfo.tm_min = _gps.time.minute();
       timeinfo.tm_sec = _gps.time.second();
       tv.tv_sec = mktime(&timeinfo);
       tv.tv_usec = 0;
       settimeofday(&tv, NULL);
+      String mcz_tz = "<-03>3";
+      setenv("TZ", mcz_tz.c_str(), 1);
+      tzset();
     }
     vTaskDelay(ONE_SECOND);
   }
