@@ -51,16 +51,26 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/15, /* data=*/4,
 static QueueHandle_t lora_queue;
 
 /**
+ * @brief Tamanho do pacote LoRa recebido.
+ *
+ */
+int packet_size = 0;
+
+/**
  * @brief Array of strings representing the last send data fields.
  *
  */
-char **last_send_data = splitString("00/00/0000, 00:00:00, 00.0, 000, 0, 0.0");
+char **last_send_data = splitString(
+    "00/00/0000, 00:00:00, 00.0, 000, 0, 0.0, 0.000000, 0.000000, ¬¬",
+    &packet_size);
 
 /**
  * @brief Array of strings representing the last received data fields.
  *
  */
-char **last_recv_data = splitString("00/00/0000, 00:00:00, 00.0, 000, 0, 0.0");
+char **last_recv_data = splitString(
+    "00/00/0000, 00:00:00, 00.0, 000, 0, 0.0, 0.000000, 0.000000, ¬¬",
+    &packet_size);
 
 /**
  * @brief Wi-Fi network name.
@@ -164,6 +174,7 @@ void setup() {
     Serial.println(".");
     delay(500);
   }
+  LoRa.enableCrc();
 
   // Init LoRa queue
   lora_queue = xQueueCreate(256, sizeof(String));
@@ -190,7 +201,6 @@ void task_rx(void *p) {
   String lora_packet;
   while (true) {
     int packetSize = LoRa.parsePacket();
-    // Serial.println(packetSize);
     if (packetSize) {
       // received a packet
       Serial.print("Received packet '");
@@ -198,9 +208,11 @@ void task_rx(void *p) {
       // read packet
       while (LoRa.available()) {
         lora_packet = LoRa.readString();
-        last_recv_data = splitString(lora_packet.c_str());
+        if (check_msg(lora_packet.c_str())) {
+          last_recv_data = splitString(lora_packet.c_str(), &packet_size);
+          xQueueSend(lora_queue, (void *)&lora_packet, 10);
+        }
         Serial.print(lora_packet);
-        xQueueSend(lora_queue, (void *)&lora_packet, 10);
       }
 
       // print RSSI of packet
@@ -215,16 +227,14 @@ void task_rx(void *p) {
 void task_wifi(void *p) {
   ThingSpeak.begin(wifiClient); // Initialize ThingSpeak
   String lora_msg;
-  // struct fields send_fields;
 
   while (true) {
     if (millis() - lastUpdateTime >= postingInterval) {
       lastUpdateTime = millis();
       if (xQueueReceive(lora_queue, (void *)&lora_msg, 10) == pdTRUE) {
         Serial.println(lora_msg);
-        //  lastUpdateTime = millis();
         Serial.println("begin split");
-        last_send_data = splitString(lora_msg.c_str());
+        last_send_data = splitString(lora_msg.c_str(), &packet_size);
         Serial.println("thingspeak");
         ThingSpeak.setField(1, (float)atof(last_send_data[2]));
         ThingSpeak.setField(2, atoi(last_send_data[3]));
@@ -235,7 +245,6 @@ void task_wifi(void *p) {
         Serial.println(writeSuccess);
       }
     }
-    // Serial.println(millis() - lastUpdateTime);
     vTaskDelay(1000);
   }
 }
@@ -247,6 +256,5 @@ void task_disp(void *p) {
     delay(10000);
     formatDataPage(&u8g2, "Last data transmited", last_send_data);
     delay(10000);
-    // update_display(&u8g2, 10000);
   }
 }

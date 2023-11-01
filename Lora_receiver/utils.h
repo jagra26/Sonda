@@ -3,28 +3,43 @@
 #include <cstdlib>
 #include <string.h>
 
+/**
+ * @brief Tamanho máximo de um pacote LoRa.
+ *
+ */
 #define MAX_SIZE 100
 
-struct fields {
-  int TDS;
-  int turbidity;
-  float temperature;
-  float pH;
-  char *date;
-  char *time;
-};
+/**
+ * @brief Número de campos de um pacote válido.
+ *
+ */
+#define PACKET_FIELDS 9
 
-char **splitString(const char *input);
+/**
+ * @brief Separa um pacote em uma lista de strings. Retorna o tamanho da lista
+ * em packet_size.
+ *
+ * @param input Pacote LoRa.
+ * @param packet_size[out] Tamanho da lista de strings.
+ * @return char** Lista de strings que representam os campos.
+ */
+char **splitString(const char *input, int *packet_size);
 
+/**
+ * @brief Desenha uma página de dados no display.
+ *
+ * @param u8g2 Estrutura que guarda as informações do display.
+ * @param title Título da página.
+ * @param data Lista de strings que representam os campos.
+ */
 void formatDataPage(U8G2_SSD1306_128X64_NONAME_F_SW_I2C *u8g2,
-                    const char *title, char** data);
+                    const char *title, char **data);
 
-void set_send_fields(char *date, char *time, int TDS, int turbidity,
-                     float temperature, float pH);
-
-void set_recv_fields(char *date, char *time, int TDS, int turbidity,
-                     float temperature, float pH);
-
-void get_send_fields(struct fields *fields);
-
-void update_display(U8G2_SSD1306_128X64_NONAME_F_SW_I2C *u8g2, int delay_ms);
+/**
+ * @brief Checa se um pacote LoRa é válido e deve ser processado.
+ *
+ * @param lora_msg Pacote LoRa.
+ * @return true Caso seja válido.
+ * @return false Caso contrário.
+ */
+bool check_msg(const char *lora_msg);

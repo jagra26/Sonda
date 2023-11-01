@@ -127,13 +127,18 @@ extern "C" void app_main() {
 
   // Init and get the time
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  /*String mcz_tz = "GMTGMT-1,M3.4.0/01,M10.4.0/02";
-  setenv("TZ", mcz_tz.c_str(), 1);
-  tzset();*/
+
+  // Set time to GMT0
+  setenv("TZ", "GMT0", 1);
+  tzset();
+
+  // Get datetime from network
   while (!getLocalTime(&timeinfo)) {
     delay(HALF_SECOND);
-    Serial.print("trying to get datetime ");
+    ESP_LOGI(MAINTAG, "Trying to get datetime ");
   }
+
+  // update time structures
   tv.tv_sec = mktime(&timeinfo);
   tv.tv_usec = 0;
   settimeofday(&tv, NULL);
@@ -152,6 +157,7 @@ extern "C" void app_main() {
   while (tx_queue == NULL)
     ;
 
+  // Init SD card
   spi.begin(SCK, MISO, MOSI, CS);
   ESP_LOGI(SDTAG, "SPI begin");
   delay(HALF_SECOND);
@@ -250,7 +256,8 @@ void task_sd(void *p) {
   ESP_LOGI(SDTAG, "SD Card Size: %lluMB\n", cardSize);
   if (!checkFile(SD, "/d.csv")) {
     writeFile(SD, "/d.csv",
-              "Date, Time, Temperature (ºC), TDS (ppm), Turbidity(V), pH\n");
+              "Date, Time, Temperature (ºC), TDS (ppm), Turbidity(V), pH, lat, "
+              "long\n");
     appendFile(SD, "/d.csv", "-, -, -, -, -, -\n");
   }
 
@@ -268,10 +275,12 @@ void task_sd(void *p) {
       strftime(date, 64, "%d/%m/%Y, %H:%M:%S",
                &data); // Cria uma String formatada da estrutura "data"
       ESP_LOGI(SDTAG, "get datetime: %s", date);
-      sprintf(line, "%s, %s\n", date, sensor_msg);
+      sprintf(line, "%s, %s, %.6f, %.6f\n", date, sensor_msg,
+              _gps.location.lat(), _gps.location.lng());
       ESP_LOGI(SDTAG, "line: %s", line);
       appendFile(SD, "/d.csv", line);
-      sprintf(lora_msg, "%s, %s", date, sensor_msg);
+      sprintf(lora_msg, "%s, %s, %.6f, %.6f, ¬¬", date, sensor_msg,
+              _gps.location.lat(), _gps.location.lng());
       xQueueSend(tx_queue, (void *)&lora_msg, 10);
       ESP_LOGI(SDTAG, "write on tx_queue");
       strcpy(lora_msg, EMPTY_STRING);
@@ -310,11 +319,12 @@ void task_gps(void *p) {
       last_time = millis();
       vTaskDelay(ONE_MINUTE * 10);
     }
-    if (_gps.location.isValid()) {
-      ESP_LOGI(GPSTAG, "gps values:\n Latitude: %10.6f\nLatitude: %10.6f\n",
-               _gps.location.lat(), _gps.location.lng());
-    }
-    if (_gps.date.year() >= timeinfo.tm_year + 1900) {
+    // if (_gps.location.isValid()) {
+    ESP_LOGI(GPSTAG, "gps values:\n Latitude: %10.6f\n Longitude: %10.6f\n",
+             _gps.location.lat(), _gps.location.lng());
+    //}
+    if (_gps.time.isValid() && _gps.time.isUpdated() &&
+        (_gps.date.year() >= timeinfo.tm_year + 1900)) {
       Serial.print(_gps.date.month());
       Serial.print(F("/"));
       Serial.print(_gps.date.day());
@@ -334,10 +344,6 @@ void task_gps(void *p) {
       timeinfo.tm_sec = _gps.time.second();
       tv.tv_sec = mktime(&timeinfo);
       tv.tv_usec = 0;
-      settimeofday(&tv, NULL);
-      String mcz_tz = "<-03>3";
-      setenv("TZ", mcz_tz.c_str(), 1);
-      tzset();
     }
     vTaskDelay(ONE_SECOND);
   }
