@@ -57,3 +57,24 @@ bool check_msg(const char *lora_msg) {
   }
   return false;
 }
+
+void formatGPSPage(U8G2_SSD1306_128X64_NONAME_F_SW_I2C *u8g2, char **data_recv, char **data_send) {
+  u8g2->firstPage();
+  do {
+    u8g2->setFont(u8g2_font_12x6LED_tf);
+    u8g2->drawStr(0, 12, "Last coords received");
+    u8g2->setFont(u8g2_font_NokiaSmallBold_tf);
+    u8g2->drawStr(0, 24, "Latitude");
+    u8g2->drawStr(0, 32, "Longitude");
+    u8g2->drawStr(79, 24, data_recv[6]);
+    u8g2->drawStr(79, 32, data_recv[7]);
+    u8g2->setFont(u8g2_font_12x6LED_tf);
+    u8g2->drawStr(0, 45, "Last coords sended");
+    u8g2->setFont(u8g2_font_NokiaSmallBold_tf);
+    u8g2->drawStr(0, 55, "Latitude");
+    u8g2->drawStr(0, 63, "Longitude");
+    u8g2->drawStr(79, 55, data_send[6]);
+    u8g2->drawStr(79, 63, data_send[7]);
+    
+  } while (u8g2->nextPage());
+}

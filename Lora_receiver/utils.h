@@ -43,3 +43,15 @@ void formatDataPage(U8G2_SSD1306_128X64_NONAME_F_SW_I2C *u8g2,
  * @return false Caso contrário.
  */
 bool check_msg(const char *lora_msg);
+
+/**
+ * @brief Desenha uma página de coordenadas no display.
+ *
+ * @param u8g2 Estrutura que guarda as informações do display.
+ * @param data_recv Lista de strings que representam os últimos campos
+ * recebidos.
+ * @param data_send Lista de strings que representam os últimos campos
+ * transmitidos.
+ */
+void formatGPSPage(U8G2_SSD1306_128X64_NONAME_F_SW_I2C *u8g2, char **data_recv,
+                   char **data_send);

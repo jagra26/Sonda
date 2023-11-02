@@ -14,38 +14,38 @@
 #include "utils.h"
 
 /**
- * @brief Slave Select pin of LoRa module.
+ * @brief Pino Slave Select do módulo LoRa.
  *
  */
 #define ss 18
 
 /**
- * @brief Reset pin of LoRa module.
+ * @brief Pino reset do módulo LoRa.
  *
  */
 #define rst 14
 
 /**
- * @brief DIO0 pin of LoRa module.
+ * @brief Pino DIO0 do módulo LoRa.
  *
  */
 #define dio0 26
 
 /**
- * @brief Max size of LoRa message.
+ * @brief Tamanho máximo da mensagem LoRa.
  *
  */
 #define LORA_MSG_SIZE 256
 
 /**
- * @brief OLED display structure.
+ * @brief Estrutura do display OLED.
  *
  */
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/15, /* data=*/4,
                                          /* reset=*/16);
 
 /**
- * @brief LoRa messages queue.
+ * @brief Fila das mensagens LoRa.
  *
  */
 static QueueHandle_t lora_queue;
@@ -57,7 +57,7 @@ static QueueHandle_t lora_queue;
 int packet_size = 0;
 
 /**
- * @brief Array of strings representing the last send data fields.
+ * @brief Array de strings representando os últimos dados enviados.
  *
  */
 char **last_send_data = splitString(
@@ -65,7 +65,7 @@ char **last_send_data = splitString(
     &packet_size);
 
 /**
- * @brief Array of strings representing the last received data fields.
+ * @brief Array de strings representando os últimos dados recebidos.
  *
  */
 char **last_recv_data = splitString(
@@ -73,69 +73,69 @@ char **last_recv_data = splitString(
     &packet_size);
 
 /**
- * @brief Wi-Fi network name.
+ * @brief Nome da rede Wi-Fi.
  *
  */
 const char *ssid = "brisa-1921072";
 
 /**
- * @brief Wi-Fi network password.
+ * @brief Senha da rede Wi-Fi.
  *
  */
 const char *password = "to7w55gc";
 
 /**
- * @brief ThingSpeak API adress.
+ * @brief Endereço da API do Thingspeak.
  *
  */
 char thingSpeakAddress[] = "api.thingspeak.com";
 
 /**
- * @brief ID channel from ThingSpeak.
+ * @brief ID do canal ThingSpeak.
  *
  */
 unsigned long channelID = 1998424;
 
 /**
- * @brief API key for write on channel.
+ * @brief Chave de escrita do canal na API Thingspeak.
  *
  */
 char *writeAPIKey = "849B5ZPP512LA7VS";
 
 /**
- * @brief Time to wait for post data on cloud. 2 minutes in miliseconds.
+ * @brief Tempo de espera para postar na API. 2 minutos em milisegundos.
  *
  */
 const unsigned long postingInterval = 120L * 1000;
 
 /**
- * @brief Time from the last data update.
+ * @brief Tempo desde o último update.
  *
  */
 long lastUpdateTime = 0;
 
 /**
- * @brief Client for Wi-Fi connection.
+ * @brief Cliente Wi-Fi.
  *
  */
 WiFiClient wifiClient;
 
 /**
- * @brief Task for receiving data from LoRa.
+ * @brief Tarefa de recebimento de dados LoRa.
  *
  * @param p
  */
 void task_rx(void *p);
 
 /**
- * @brief Task for posting data to cloud.
+ * @brief Tarefa de publicação de dados na nuvem.
  *
  * @param p
  */
 void task_wifi(void *p);
 
 /**
- * @brief Task to show data on display.
+ * @brief Tarefa de exibição de dados no display OLED.
  *
  * @param p
  */
@@ -143,10 +143,10 @@ void task_disp(void *p);
 
 void setup() {
 
-  // Setup display
+  // Configuração do display OLED.
   u8g2.begin();
 
-  // Show UFAL logo
+  // Apresentação logo da UFAL.
   u8g2.firstPage();
   do {
     u8g2.setFont(u8g2_font_ncenB14_tr);
@@ -154,7 +154,7 @@ void setup() {
   } while (u8g2.nextPage());
   delay(5000);
 
-  // Show PELD logo
+  // Apresentação logo do PELD-CCAL.
   u8g2.firstPage();
   do {
     u8g2.setFont(u8g2_font_ncenB14_tr);
@@ -162,11 +162,11 @@ void setup() {
   } while (u8g2.nextPage());
   delay(1000);
 
-  // Setup LoRa transceiver module
+  // Configuração do módulo LoRa.
   LoRa.setPins(ss, rst, dio0);
   Serial.begin(115200);
 
-  // Replace the LoRa.begin(---E-) argument with your location's frequency
+  // Substitua a frequência conforme a região.
   // 433E6 for Asia
   // 866E6 for Europe
   // 915E6 for North America
@@ -176,10 +176,10 @@ void setup() {
   }
   LoRa.enableCrc();
 
-  // Init LoRa queue
+  // Inicialização da fila das mensagens LoRa.
   lora_queue = xQueueCreate(256, sizeof(String));
 
-  // Wi-Fi connection
+  // Conexão Wi-Fi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -189,7 +189,7 @@ void setup() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-  // Init tasks
+  // Inicialização de tarefas
   xTaskCreate(&task_rx, "task_rx", 4096, NULL, 6, NULL);
   xTaskCreate(&task_wifi, "task_wifi", 2048, NULL, 5, NULL);
   xTaskCreate(&task_disp, "task_disp", 2048, NULL, 4, NULL);
@@ -202,10 +202,10 @@ void task_rx(void *p) {
   while (true) {
     int packetSize = LoRa.parsePacket();
     if (packetSize) {
-      // received a packet
+      // Pacote recebido.
       Serial.print("Received packet '");
 
-      // read packet
+      // Leitura do pacote.
       while (LoRa.available()) {
         lora_packet = LoRa.readString();
         if (check_msg(lora_packet.c_str())) {
@@ -215,7 +215,7 @@ void task_rx(void *p) {
         Serial.print(lora_packet);
       }
 
-      // print RSSI of packet
+      // RSSI do pacote
       Serial.print("' with RSSI ");
       Serial.println(LoRa.packetRssi());
     }
@@ -225,7 +225,8 @@ void task_rx(void *p) {
 }
 
 void task_wifi(void *p) {
-  ThingSpeak.begin(wifiClient); // Initialize ThingSpeak
+// Inicialização do ThingSpeak
+  ThingSpeak.begin(wifiClient); 
   String lora_msg;
 
   while (true) {
@@ -255,6 +256,8 @@ void task_disp(void *p) {
     formatDataPage(&u8g2, "Last data received", last_recv_data);
     delay(10000);
     formatDataPage(&u8g2, "Last data transmited", last_send_data);
+    delay(10000);
+    formatGPSPage(&u8g2, last_recv_data, last_send_data);
     delay(10000);
   }
 }
