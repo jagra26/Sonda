@@ -1,5 +1,3 @@
 #include "pH.h"
 
-float ph_calc(float voltage) {
-  return 7 + (((VOLTAGE_7_0 - voltage) / a_m) + b);
-}
+float ph_calc(float voltage) { return (voltage * ANGULAR_COEF) + LINEAR_COEF; }

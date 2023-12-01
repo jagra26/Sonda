@@ -36,8 +36,8 @@ extern "C" {
 static const char *GPSTAG = "GPS";
 static const char *MAINTAG = "MAIN";
 
-const char *ssid = "brisa-1921072";
-const char *password = "to7w55gc";
+const char *ssid = "brisa-1921072"; //"Redmi 10C";    //"ICBS";            // //
+const char *password = "to7w55gc";  //"vpzt1839"; //"#gazq&2000#"; // //
 const char *ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 3;
 const int daylightOffset_sec = 3600;
@@ -47,6 +47,8 @@ SPIClass spi = SPIClass(HSPI);
 
 TinyGPSPlus _gps;
 HardwareSerial _serial_gps(1);
+AXP20X_Class axp;
+
 struct tm data; // Cria a estrutura que contem as informacoes da data.
 
 // LoRa Log
@@ -147,6 +149,15 @@ extern "C" void app_main() {
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
 
+  // initialize GPS
+  if (axp.begin(Wire, AXP192_SLAVE_ADDRESS) == AXP_FAIL) {
+    ESP_LOGE(MAINTAG, "failed to initialize communication with AXP192");
+  }
+  if (axp.setPowerOutPut(AXP192_LDO3, AXP202_ON) == AXP_PASS) {
+    ESP_LOGI(GPSTAG, "turned on GPS module");
+  } else {
+    ESP_LOGE(GPSTAG, "failed to turn on GPS module");
+  }
   _serial_gps.begin(9600, SERIAL_8N1, 34, 12);
 
   // create queues
@@ -202,7 +213,7 @@ void task_sensor_read(void *p) {
   while (true) {
     // Turn on sensors
     digitalWrite(RELAY, HIGH);
-    // vTaskDelay(pdMS_TO_TICKS(ONE_SECOND * 60));
+    vTaskDelay(pdMS_TO_TICKS(ONE_MINUTE));
 
     // read temperature
     adc0 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_0, 32, 40);
@@ -223,6 +234,7 @@ void task_sensor_read(void *p) {
     // read turbidity
     adc2 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_2, 32, 40);
     Voltage = digit_to_voltage(adc2);
+    ESP_LOGI(SENSORTAG, " voltage: %.3f", Voltage);
     turbidity = get_turbidity(Voltage);
 
     ESP_LOGI(SENSORTAG, "Turbidity: %d", turbidity);
@@ -231,7 +243,6 @@ void task_sensor_read(void *p) {
     adc3 = median_ads_read(&ads, ADS1115_REG_CONFIG_MUX_SINGLE_3, 32, 40);
     Voltage = digit_to_voltage(adc3);
     ph = Voltage;
-    ESP_LOGI(SENSORTAG, "ph voltage: %.1f", ph);
     ph = ph_calc(ph);
     ESP_LOGI(SENSORTAG, "ph: %.2f", ph);
 
@@ -240,7 +251,7 @@ void task_sensor_read(void *p) {
     xQueueSend(sensor_queue, (void *)&sensor_msg, 10);
     ESP_LOGI(SENSORTAG, "Write on sensor_queue");
     digitalWrite(RELAY, LOW);
-    vTaskDelay(pdMS_TO_TICKS(ONE_SECOND * 2));
+    vTaskDelay(pdMS_TO_TICKS(ONE_SECOND * 10));
   }
 }
 
@@ -256,9 +267,7 @@ void task_sd(void *p) {
   ESP_LOGI(SDTAG, "SD Card Size: %lluMB\n", cardSize);
   if (!checkFile(SD, "/d.csv")) {
     writeFile(SD, "/d.csv",
-              "Date, Time, Temperature (ºC), TDS (ppm), Turbidity(V), pH, lat, "
-              "long\n");
-    appendFile(SD, "/d.csv", "-, -, -, -, -, -\n");
+              "Date,Time,Temperature (°C),TDS (ppm),Turbidity,pH,lat,long\n");
   }
 
   char sensor_msg[SENSOR_MSG_SIZE];
@@ -272,7 +281,7 @@ void task_sd(void *p) {
       ESP_LOGI(SDTAG, "%s", sensor_msg);
       data = *localtime(&tt); // Converte o tempo atual e atribui na estrutura
 
-      strftime(date, 64, "%d/%m/%Y, %H:%M:%S",
+      strftime(date, 64, "%Y-%m-%d, %H:%M:%S",
                &data); // Cria uma String formatada da estrutura "data"
       ESP_LOGI(SDTAG, "get datetime: %s", date);
       sprintf(line, "%s, %s, %.6f, %.6f\n", date, sensor_msg,
@@ -285,7 +294,7 @@ void task_sd(void *p) {
       ESP_LOGI(SDTAG, "write on tx_queue");
       strcpy(lora_msg, EMPTY_STRING);
       ESP_LOGI(SDTAG, "reset lora_msg: %s", lora_msg);
-      vTaskDelay(pdMS_TO_TICKS(ONE_SECOND));
+      vTaskDelay(pdMS_TO_TICKS(ONE_SECOND * 10));
     }
   }
 }
@@ -307,7 +316,7 @@ void task_tx(void *p) {
       strcpy(payload, EMPTY_STRING);
       lora_sleep();
     }
-    vTaskDelay(pdMS_TO_TICKS(ONE_SECOND));
+    vTaskDelay(pdMS_TO_TICKS(ONE_SECOND * 10));
   }
 }
 
@@ -315,9 +324,24 @@ void task_gps(void *p) {
   unsigned long last_time = millis();
   while (_serial_gps.available()) {
     _gps.encode(_serial_gps.read());
-    if (millis() - last_time >= ONE_MINUTE * 10) {
+    if (millis() - last_time >= ONE_MINUTE * 1) {
+
+      if (axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF) == AXP_PASS) {
+        ESP_LOGI(GPSTAG, "turned off GPS module");
+      } else {
+        ESP_LOGE(GPSTAG, "failed to turn off GPS module");
+        vTaskDelete(NULL);
+      }
+      delay(ONE_MINUTE * 1);
+      if (axp.setPowerOutPut(AXP192_LDO3, AXP202_ON) == AXP_PASS) {
+        ESP_LOGI(GPSTAG, "turned on GPS module");
+      } else {
+        ESP_LOGE(GPSTAG, "failed to turn on GPS module");
+        vTaskDelete(NULL);
+      }
+      _serial_gps.begin(9600, SERIAL_8N1, 34, 12);
+      vTaskDelay(ONE_SECOND);
       last_time = millis();
-      vTaskDelay(ONE_MINUTE * 10);
     }
     // if (_gps.location.isValid()) {
     ESP_LOGI(GPSTAG, "gps values:\n Latitude: %10.6f\n Longitude: %10.6f\n",
@@ -325,7 +349,7 @@ void task_gps(void *p) {
     //}
     if (_gps.time.isValid() && _gps.time.isUpdated() &&
         (_gps.date.year() >= timeinfo.tm_year + 1900)) {
-      Serial.print(_gps.date.month());
+      /*Serial.print(_gps.date.month());
       Serial.print(F("/"));
       Serial.print(_gps.date.day());
       Serial.print(F("/"));
@@ -334,7 +358,7 @@ void task_gps(void *p) {
       Serial.print(":");
       Serial.print(_gps.time.minute());
       Serial.print(":");
-      Serial.println(_gps.time.second());
+      Serial.println(_gps.time.second());*/
 
       timeinfo.tm_year = _gps.date.year() - 1900;
       timeinfo.tm_mon = _gps.date.month() - 1; // Month, 0 - jan
@@ -347,4 +371,6 @@ void task_gps(void *p) {
     }
     vTaskDelay(ONE_SECOND);
   }
+  ESP_LOGE(GPSTAG, "GPS not available\n");
+  vTaskDelete(NULL);
 }
